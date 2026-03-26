@@ -282,7 +282,7 @@ Indice de clause (si disponible) :
 Clause ISO :"""
 
 _HYDE_TIMEOUT: float = float(os.getenv("HYDE_TIMEOUT", "15.0"))  # 15s covers llama3.2:3b locally (~10 tok/s × 100 tok); cloud APIs are faster
-_HYDE_RETRIES: int = 2        # total attempts before giving up
+_HYDE_RETRIES: int = 3        # total attempts before giving up
 _HYDE_RETRY_SLEEP: float = 0.5  # seconds to wait between attempts
 
 
