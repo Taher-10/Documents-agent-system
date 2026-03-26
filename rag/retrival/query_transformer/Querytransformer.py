@@ -118,8 +118,7 @@ def augment_bm25_tokens(base_tokens: List[str], iso_hits: List[str]) -> List[str
 # HyDE decision gate
 # ---------------------------------------------------------------------------
 
-_HYDE_TOKEN_THRESHOLD = 150   # estimated tokens below which HyDE always fires
-_HYDE_VOCAB_THRESHOLD = 3     # ISO vocab hits below which HyDE fires for long texts
+_HYDE_TOKEN_THRESHOLD = 150   # estimated tokens below which HyDE fires when no anchors found
 
 
 def should_use_hyde(
@@ -128,24 +127,37 @@ def should_use_hyde(
     """
     Return True when HyDE should be applied to *text*.
 
-    Two signals are combined:
+    Three signals decide whether the query has sufficient ISO signal strength
+    to embed directly without HyDE expansion:
 
-    1. **Token count** — estimated as ``len(text.split()) * 1.3``.
-       Short texts (< 150 estimated tokens) always trigger HyDE: sparse
-       vocabulary needs expansion regardless of ISO term density.
+    1. **Clause number present** — a clause reference (e.g. "7.2", "8.5.1")
+       makes the query already specific. Skip HyDE.
 
-    2. **ISO vocabulary hits** — checked only for longer texts.
-       If the text already contains 3 or more ISO canonical terms it is
-       already written in norm language; embedding directly is sufficient.
-       Fewer than 3 hits means a vocabulary gap exists → trigger HyDE.
+    2. **ISO vocabulary anchor** — 1+ canonical ISO term match (excluding
+       clause numbers and modal terms) means the dense encoder already has
+       a strong anchor. Skip HyDE.
 
-    The short-circuit on token count avoids running ``scan_iso_vocabulary``
-    for texts that will trigger anyway.
+    3. **Short text with no anchors** — estimated tokens < 150 AND zero
+       vocabulary matches → signal is too weak, trigger HyDE.
+
+    This avoids triggering HyDE for queries like "formation compétences"
+    where the terms are direct ISO vocabulary hits.
     """
+    hits = scan_iso_vocabulary(text, language, norm_filter)
+    modal_set = set(MODAL_TERMS)
+
+    # Signal 1: clause number → already specific, skip HyDE
+    if any(CLAUSE_PATTERN.fullmatch(h) for h in hits):
+        return False
+
+    # Signal 2: 1+ ISO vocabulary match (non-clause, non-modal) → anchored, skip HyDE
+    vocab_hits = [h for h in hits if not CLAUSE_PATTERN.fullmatch(h) and h not in modal_set]
+    if vocab_hits:
+        return False
+
+    # Signal 3: short text with zero vocabulary matches → trigger HyDE
     estimated_tokens = len(text.split()) * 1.3
-    if estimated_tokens < _HYDE_TOKEN_THRESHOLD:
-        return True
-    return len(scan_iso_vocabulary(text, language, norm_filter)) < _HYDE_VOCAB_THRESHOLD
+    return estimated_tokens < _HYDE_TOKEN_THRESHOLD
 
 
 def _extract_hyde_context(
