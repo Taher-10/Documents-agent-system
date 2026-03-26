@@ -147,6 +147,42 @@ def should_use_hyde(
         return True
     return len(scan_iso_vocabulary(text, language, norm_filter)) < _HYDE_VOCAB_THRESHOLD
 
+
+def _extract_hyde_context(
+    text: str,
+    language: str,
+    norm_filter: Optional[List[str]],
+) -> tuple[str, str]:
+    """
+    Pre-scan *text* to extract vocabulary anchors for the HyDE prompt.
+
+    Returns
+    -------
+    (keywords_str, clause_hint_str)
+        keywords_str    : top-5 ISO canonical vocabulary hits, comma-separated.
+                          Excludes clause numbers and modal terms.
+                          Empty string (not "None") when nothing qualifies.
+        clause_hint_str : first clause number found (e.g. "8.5"), or "".
+    """
+    hits = scan_iso_vocabulary(text, language, norm_filter)
+    modal_set = set(MODAL_TERMS)
+
+    clause_hint_str = ""
+    keyword_candidates: List[str] = []
+
+    for hit in hits:
+        if CLAUSE_PATTERN.fullmatch(hit):
+            if not clause_hint_str:          # first clause number wins
+                clause_hint_str = hit
+        elif hit in modal_set:
+            pass                             # discard — noise, not anchoring
+        else:
+            keyword_candidates.append(hit)
+
+    keywords_str = ", ".join(keyword_candidates[:5])
+    return keywords_str, clause_hint_str
+
+
 # ---------------------------------------------------------------------------
 # HyDE generation
 # ---------------------------------------------------------------------------
@@ -239,7 +275,11 @@ _HYDE_RETRY_SLEEP: float = 0.5  # seconds to wait between attempts
 
 
 async def generate_hyde_text(
-    text: str, norm_filter: List[str], language: str = "EN"
+    text: str,
+    norm_filter: List[str],
+    language: str = "EN",
+    keywords: str = "",
+    clause_hint: str = "",
 ) -> Optional[str]:
     """
     Generate a hypothetical ISO clause for the given operational text.
@@ -262,12 +302,23 @@ async def generate_hyde_text(
     language:
         ``"EN"`` (default) or ``"FR"``.  Selects the prompt template so the
         generated clause is in the same language as the query.
+    keywords:
+        Comma-separated ISO vocabulary hits from the pre-scan.
+        Empty string when none found. Injected into the prompt verbatim.
+    clause_hint:
+        Clause number (e.g. "8.5") extracted from the pre-scan.
+        Empty string when none found. Injected into the prompt verbatim.
     """
     from rag.retrival.clients.llm_client import chat_complete  # deferred — avoids hard dep at module level
 
     standards = ", ".join(norm_filter) if norm_filter else "ISO 9001"
     template = _HYDE_PROMPT_TEMPLATE if language == "EN" else _HYDE_PROMPT_TEMPLATE_FR
-    prompt = template.format(standards=standards, text=text)
+    prompt = template.format(
+        standards=standards,
+        text=text,
+        keywords=keywords,
+        clause_hint=clause_hint,
+    )
 
     for attempt in range(_HYDE_RETRIES):
         try:
@@ -345,7 +396,8 @@ async def transform(
 
     1. Build the Qdrant norm filter (raises ``ValueError`` if empty).
     2. Decide whether HyDE should run.
-    3. If HyDE triggered, generate hypothetical clause; fall back on failure.
+    3. If HyDE triggered, pre-scan query for vocabulary anchors, then generate
+       hypothetical clause; fall back on failure.
     4. Scan the (possibly HyDE-rewritten) text for ISO vocabulary.
     5. Tokenise and augment BM25 tokens.
     6. Return a ``TransformedQuery``.
@@ -370,7 +422,18 @@ async def transform(
     # 2 + 3. HyDE
     hyde_triggered = should_use_hyde(query_text, language, norm_filter)
     if hyde_triggered:
-        hyde_text = await generate_hyde_text(query_text, norm_filter, language)
+        # Pre-scan the raw query for vocabulary anchors BEFORE calling the LLM.
+        # This anchors the HyDE prompt without polluting the post-HyDE vocab scan.
+        hyde_keywords, hyde_clause_hint = _extract_hyde_context(
+            query_text, language, norm_filter
+        )
+        hyde_text = await generate_hyde_text(
+            query_text,
+            norm_filter,
+            language,
+            keywords=hyde_keywords,
+            clause_hint=hyde_clause_hint,
+        )
         if hyde_text:
             embed_text = hyde_text
             hyde_used = True
