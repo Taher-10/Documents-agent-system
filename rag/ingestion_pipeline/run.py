@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-from parser import parse_iso_pdf
-from pipeline import segment, embed_and_store
+from rag.ingestion_pipeline.pdf_parser import parse_iso_pdf
+from rag.ingestion_pipeline.pipeline import segment, embed_and_store
 
 base_dir = Path(__file__).parent
 pdf_path = base_dir / "data" / "n9001.pdf"

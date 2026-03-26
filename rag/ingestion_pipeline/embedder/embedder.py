@@ -44,9 +44,9 @@ from typing import List, Optional
 
 import httpx
 
-from chunker.models import NormChunk
-from embedder.bm25_encoder import BM25SparseEncoder
-from embedder.config import (
+from rag.ingestion_pipeline.chunker.models import NormChunk
+from rag.shared.bm25.bm25_encoder import BM25SparseEncoder
+from .config import (
     EMBED_BATCH_SIZE,
     EMBED_CONTENT_TYPES,
     EMBED_MAX_RETRIES,
@@ -57,7 +57,7 @@ from embedder.config import (
     OLLAMA_EMBED_ENDPOINT,
     OLLAMA_EMBED_MODEL,
 )
-from embedder.models import EmbeddedChunk, EmbeddingResult
+from .models import EmbeddedChunk, EmbeddingResult
 
 
 def _batched(items: list, size: int):

@@ -44,14 +44,11 @@ import sys
 
 import requests
 
-# smoketest/ → tests/ → query_retrival/ → retrival/  (where models.py lives)
-sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")))
-
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
-from models import TransformedQuery
-from query_retrival.retriever import HybridRetriever, EmptyCorpusError
+from rag.retrival.models import TransformedQuery
+from rag.retrival.query_retrival.retriever import HybridRetriever, EmptyCorpusError
 
 # ── Config ────────────────────────────────────────────────────────────────────
 

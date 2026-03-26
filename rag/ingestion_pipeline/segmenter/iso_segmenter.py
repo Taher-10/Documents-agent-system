@@ -24,7 +24,7 @@ import re
 import warnings
 from typing import List
 
-from parser.document import ParsedDocument
+from rag.ingestion_pipeline.pdf_parser.document import ParsedDocument
 
 from .models import (
     EXPECTED_LEAF_COUNTS,

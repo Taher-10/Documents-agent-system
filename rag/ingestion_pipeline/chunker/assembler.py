@@ -37,14 +37,14 @@ import urllib.request
 import warnings
 from typing import List, Tuple
 
-from segmenter.models import (
+from rag.ingestion_pipeline.segmenter.models import (
     NORM_ID_MAP,
     NORM_VERSION_MAP,
     STANDARD_ID_MAP,
     ClauseSpan,
     ContentType,
 )
-from segmenter.page_tracker import PageTracker
+from rag.ingestion_pipeline.segmenter.page_tracker import PageTracker
 
 from .models import NormChunk
 

@@ -30,14 +30,11 @@ from typing import List
 
 import requests
 
-# smoketest/ → tests/ → query_retrival/ → retrival/  (where models.py lives)
-sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")))
-
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
-from models import TransformedQuery, RetrievedChunk
-from query_retrival.retriever import DenseRetriever, EmptyCorpusError
+from rag.retrival.models import TransformedQuery, RetrievedChunk
+from rag.retrival.query_retrival.retriever import DenseRetriever, EmptyCorpusError
 
 # ── Config ────────────────────────────────────────────────────────────────────
 

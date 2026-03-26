@@ -7,53 +7,15 @@ The critical invariant: encode_query must produce the same token→index mapping
 as _token_to_index (same MD5, same SPARSE_DIM modulus).  If this breaks,
 sparse search returns wrong results with no error message.
 
-Run from the retrival/ directory:
-    python query_retrival/tests/test_sparse_encoder_query.py
+Run from the project root:
+    pytest rag/retrival/query_retrival/tests/test_sparse_encoder_query.py
 
 No external dependencies — standard library only.
 """
-import importlib.util
-import os
-import sys
-import types
 import unittest
 
-# ── Module bootstrap ───────────────────────────────────────────────────────────
-# embedder/__init__.py re-exports EmbedderService, which cascades through the
-# full ingestion pipeline (chunker → segmenter → parser → fitz).  We only need
-# bm25_encoder.py and config.py, so we load them directly with importlib and
-# register lightweight stubs for their transitive dependencies.
-
-_HERE = os.path.dirname(os.path.abspath(__file__))
-# tests/ → query_retrival/ → retrival/ → rag/ → ingestion_pipeline/embedder/
-_EMBEDDER_DIR = os.path.normpath(
-    os.path.join(_HERE, "..", "..", "..", "ingestion_pipeline", "embedder")
-)
-
-
-def _load_as(module_name: str, file_path: str):
-    """Load a .py file under an explicit module name, bypassing __init__.py."""
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = mod
-    spec.loader.exec_module(mod)
-    return mod
-
-
-# Register a bare embedder package so the relative import `from .config import
-# SPARSE_DIM` inside bm25_encoder.py resolves against embedder.config
-# (loaded explicitly below) without running embedder/__init__.py.
-if "embedder" not in sys.modules:
-    sys.modules["embedder"] = types.ModuleType("embedder")
-
-# Load config.py and bm25_encoder.py directly.
-_load_as("embedder.config", os.path.join(_EMBEDDER_DIR, "config.py"))
-_bm25_mod = _load_as(
-    "embedder.bm25_encoder", os.path.join(_EMBEDDER_DIR, "bm25_encoder.py")
-)
-
-BM25SparseEncoder = _bm25_mod.BM25SparseEncoder
-from embedder.config import SPARSE_DIM  # noqa: E402  (module registered above)
+from rag.shared.bm25.bm25_encoder import BM25SparseEncoder
+from rag.shared.bm25.config import SPARSE_DIM
 
 
 # ── Test classes ───────────────────────────────────────────────────────────────

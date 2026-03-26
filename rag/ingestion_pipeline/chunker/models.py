@@ -24,7 +24,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List
 
-from segmenter.models import ContentType
+from rag.ingestion_pipeline.segmenter.models import ContentType
 
 
 @dataclass

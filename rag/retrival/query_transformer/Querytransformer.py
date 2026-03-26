@@ -21,7 +21,7 @@ from typing import List, Optional, Set
 
 from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
 
-from models import TransformedQuery
+from rag.retrival.models import TransformedQuery
 
 from .vocabulary import ISO_VOCABULARY_EN, ISO_VOCABULARY_FR
 
@@ -202,7 +202,7 @@ async def generate_hyde_text(
         ``"EN"`` (default) or ``"FR"``.  Selects the prompt template so the
         generated clause is in the same language as the query.
     """
-    from clients.llm_client import chat_complete  # deferred — avoids hard dep at module level
+    from rag.retrival.clients.llm_client import chat_complete  # deferred — avoids hard dep at module level
 
     standards = ", ".join(norm_filter) if norm_filter else "ISO 9001"
     template = _HYDE_PROMPT_TEMPLATE if language == "EN" else _HYDE_PROMPT_TEMPLATE_FR

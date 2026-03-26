@@ -53,12 +53,12 @@ import warnings
 from dataclasses import dataclass
 from typing import List
 
-from parser.document import ParsedDocument
+from rag.ingestion_pipeline.pdf_parser.document import ParsedDocument
 
-from chunker import NormChunk, assemble_norm_chunks
-from enricher import Enricher
-from registry import validate_chunks, write_registry
-from segmenter import (
+from rag.ingestion_pipeline.chunker import NormChunk, assemble_norm_chunks
+from rag.ingestion_pipeline.enricher import Enricher
+from rag.ingestion_pipeline.registry import validate_chunks, write_registry
+from rag.ingestion_pipeline.segmenter import (
     STANDARD_ID_MAP,
     ClauseNode,
     PageTracker,
@@ -225,9 +225,9 @@ def embed_and_store(
     int — count of chunks successfully embedded and upserted (0 on failure).
     """
     try:
-        from embedder import EmbedderService, EmbeddingResult
-        from embedder.config import EMBED_CRITICAL_THRESHOLD, EMBED_WARNING_THRESHOLD
-        from vector_store import VectorStoreManager
+        from rag.ingestion_pipeline.embedder import EmbedderService, EmbeddingResult
+        from rag.ingestion_pipeline.embedder.config import EMBED_CRITICAL_THRESHOLD, EMBED_WARNING_THRESHOLD
+        from rag.ingestion_pipeline.vector_store import VectorStoreManager
     except ImportError as exc:
         warnings.warn(
             f"[Phase 7] Import failed — embedding skipped: {exc}",

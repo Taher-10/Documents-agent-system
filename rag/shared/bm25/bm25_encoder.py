@@ -1,6 +1,6 @@
 """
-embedder/bm25_encoder.py
-────────────────────────
+shared/bm25/bm25_encoder.py
+────────────────────────────
 Two-pass corpus BM25 encoder: NormChunk.bm25_tokens → (indices, values)
 suitable for Qdrant SparseVector.
 
@@ -41,7 +41,7 @@ encode() returns two parallel lists sorted by ascending index:
 
 Dependency rule
 ---------------
-Standard library only + NormChunk (chunker.models) + SPARSE_DIM (embedder.config).
+Standard library only + NormChunk (chunker.models) + SPARSE_DIM (shared.bm25.config).
 No qdrant_client, no segmenter, no enricher, no registry imports.
 """
 from __future__ import annotations
@@ -52,7 +52,7 @@ from hashlib import md5
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
 if TYPE_CHECKING:
-    from chunker.models import NormChunk
+    from rag.ingestion_pipeline.chunker.models import NormChunk
 
 from .config import SPARSE_DIM
 
@@ -171,7 +171,7 @@ class BM25SparseEncoder:
         return indices, values
 
 
-    
+
     @staticmethod
     def encode_query(tokens: List[str]) -> Tuple[List[int], List[float]]:
         """

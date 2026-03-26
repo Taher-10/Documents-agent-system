@@ -40,8 +40,8 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
-from chunker.models import NormChunk
-from segmenter.models import ClauseNode
+from rag.ingestion_pipeline.chunker.models import NormChunk
+from rag.ingestion_pipeline.segmenter.models import ClauseNode
 
 
 # ==============================================================================

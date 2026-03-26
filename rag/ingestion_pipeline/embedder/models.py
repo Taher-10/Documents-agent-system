@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List
 
-from chunker.models import NormChunk
+from rag.ingestion_pipeline.chunker.models import NormChunk
 
 
 @dataclass

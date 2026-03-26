@@ -29,8 +29,6 @@ and the top-level models module.  No transformer, enricher, or ingestion imports
 """
 from __future__ import annotations
 
-import sys
-import os
 from typing import TYPE_CHECKING, Any, List
 
 from qdrant_client import QdrantClient
@@ -42,77 +40,14 @@ from qdrant_client.models import (
     SparseVector,
 )
 
-# Allow running from the retrival/ root directory
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from models import RetrievedChunk, TransformedQuery
+from rag.retrival.models import RetrievedChunk, TransformedQuery
+from rag.shared.bm25.bm25_encoder import BM25SparseEncoder
 
 # EmbedderService is only needed for type hints — importing it at runtime pulls
 # in chunker.models (an ingestion-pipeline package not present here).
 # Duck-typing is sufficient: any object with an async embed_text(str) method works.
 if TYPE_CHECKING:
     from query_retrival.embedder import EmbedderService
-
-
-# ── Lazy BM25 import ─────────────────────────────────────────────────────────
-
-def _get_bm25_encoder():
-    """
-    Return BM25SparseEncoder class via lazy importlib load.
-
-    embedder/__init__.py re-exports EmbedderService, which cascades through
-    the full ingestion pipeline (chunker → segmenter → parser → fitz) and
-    fails because those packages are not present in this repo.  We only need
-    bm25_encoder.py and config.py, so they are loaded directly via importlib,
-    bypassing __init__.py entirely.
-
-    The same pattern is used by test_sparse_encoder_query.py.
-    Python caches each module after the first exec_module call — no
-    per-call overhead on subsequent retrieve() calls.
-    """
-    import importlib.util as _ilu
-    import os as _os
-    import sys as _sys
-    import types as _types
-
-    # Return cached class immediately after first load
-    if "embedder.bm25_encoder" in _sys.modules:
-        return _sys.modules["embedder.bm25_encoder"].BM25SparseEncoder
-
-    # Locate the embedder directory: two levels up from this file, then into
-    # ingestion_pipeline/embedder/
-    # retriever.py lives at: rag/retrival/query_retrival/retriever.py
-    # embedder lives at:     rag/ingestion_pipeline/embedder/
-    _embedder_dir = _os.path.normpath(
-        _os.path.join(
-            _os.path.dirname(_os.path.abspath(__file__)),
-            "..", "..", "ingestion_pipeline", "embedder",
-        )
-    )
-
-    def _load_as(module_name: str, file_path: str):
-        spec = _ilu.spec_from_file_location(module_name, file_path)
-        mod = _ilu.module_from_spec(spec)
-        _sys.modules[module_name] = mod
-        spec.loader.exec_module(mod)
-        return mod
-
-    # Register a bare 'embedder' package stub so that the relative import
-    # `from .config import SPARSE_DIM` inside bm25_encoder.py resolves
-    # against 'embedder.config' (which we load explicitly below).
-    if "embedder" not in _sys.modules:
-        _sys.modules["embedder"] = _types.ModuleType("embedder")
-
-    # Load config.py then bm25_encoder.py directly (skips __init__.py so
-    # EmbedderService and its heavy dependencies are never imported).
-    if "embedder.config" not in _sys.modules:
-        _load_as("embedder.config", _os.path.join(_embedder_dir, "config.py"))
-    _bm25_mod = _load_as(
-        "embedder.bm25_encoder",
-        _os.path.join(_embedder_dir, "bm25_encoder.py"),
-    )
-
-    return _bm25_mod.BM25SparseEncoder
 
 
 # ── Exception ────────────────────────────────────────────────────────────────
@@ -268,7 +203,6 @@ class HybridRetriever:
         dense_vector: List[float] = await self._embedder.embed_text(query.embed_text)
 
         # Step 2 — sparse encode (sync, pure, no I/O)
-        BM25SparseEncoder = _get_bm25_encoder()
         sparse_indices, sparse_values = BM25SparseEncoder.encode_query(
             query.bm25_tokens
         )

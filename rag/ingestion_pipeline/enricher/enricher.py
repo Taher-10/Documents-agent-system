@@ -26,7 +26,7 @@ import math
 import re
 from typing import Dict, List
 
-from chunker.models import NormChunk
+from rag.ingestion_pipeline.chunker.models import NormChunk
 
 
 # ==============================================================================

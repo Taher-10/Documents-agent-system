@@ -39,7 +39,7 @@ from qdrant_client.models import (
     VectorParams,
 )
 
-from embedder.models import EmbeddedChunk
+from rag.ingestion_pipeline.embedder.models import EmbeddedChunk
 
 
 _QDRANT_HOST: str = os.getenv("QDRANT_HOST", "localhost")
@@ -106,7 +106,7 @@ class VectorStoreManager:
         Called immediately after create_collection() inside _ensure_collection().
         Failures are silently swallowed — the sentinel is best-effort.
         """
-        from embedder.config import SPARSE_DIM
+        from rag.shared.bm25.config import SPARSE_DIM
         try:
             self._client.upsert(
                 collection_name=collection_name,
@@ -181,7 +181,7 @@ class VectorStoreManager:
         Emits UserWarning (no raise) for legacy collections that pre-date
         the sentinel mechanism.
         """
-        from embedder.config import SPARSE_DIM
+        from rag.shared.bm25.config import SPARSE_DIM
 
         # New collection — will be created fresh with a sentinel on first upsert.
         if not self._collection_exists(collection_name):
