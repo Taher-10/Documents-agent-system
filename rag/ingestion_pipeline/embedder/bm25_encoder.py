@@ -49,10 +49,12 @@ from __future__ import annotations
 import math
 from collections import Counter
 from hashlib import md5
-from typing import Dict, List, Tuple
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
-from chunker.models import NormChunk
-from embedder.config import SPARSE_DIM
+if TYPE_CHECKING:
+    from chunker.models import NormChunk
+
+from .config import SPARSE_DIM
 
 
 class BM25SparseEncoder:
@@ -166,4 +168,44 @@ class BM25SparseEncoder:
         sorted_pairs = sorted(scores.items())  # ascending index order
         indices = [i for i, _ in sorted_pairs]
         values = [v for _, v in sorted_pairs]
+        return indices, values
+
+
+    
+    @staticmethod
+    def encode_query(tokens: List[str]) -> Tuple[List[int], List[float]]:
+        """
+        Produce a sparse query vector for hybrid retrieval.
+
+        Unlike encode(), this method requires no corpus statistics.
+        Each token is assigned uniform weight 1.0 — IDF weighting already
+        happened at index time via the document-side BM25 scores stored in
+        Qdrant.  The query just signals *which* tokens to look for.
+
+        Collision handling mirrors encode(): when two tokens hash to the
+        same index, their weights are summed.
+
+        Parameters
+        ----------
+        tokens : List[str]
+            Pre-processed query tokens (e.g. TransformedQuery.bm25_tokens).
+            May be empty — returns ([], []) in that case.
+
+        Returns
+        -------
+        Tuple[List[int], List[float]]
+            Two parallel lists sorted by ascending index, ready for
+            SparseVector(indices=..., values=...).
+        """
+        if not tokens:
+            return [], []
+
+        scores: Dict[int, float] = {}
+        for token in tokens:
+            idx = BM25SparseEncoder._token_to_index(token)
+            scores[idx] = scores.get(idx, 0.0) + 1.0  # uniform weight; sum on collision
+
+        sorted_pairs = sorted(scores.items())           # ascending index order
+        indices = [i for i, _ in sorted_pairs]
+        values  = [v for _, v in sorted_pairs]
         return indices, values

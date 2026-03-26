@@ -87,8 +87,7 @@ class NormChunk:
 
     BM25-only  (sparse in Qdrant)
     ---------
-    bm25_tokens: Combined word / clause-digit / keyword tokens for local BM25
-                 retrieval.  Excluded from Qdrant via metadata={"sparse": True}.
+    bm25_tokens: .
     """
 
     # ── Identity ──────────────────────────────────────────────────────────────
