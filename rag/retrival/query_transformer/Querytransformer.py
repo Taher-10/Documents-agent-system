@@ -41,14 +41,20 @@ MODAL_TERMS: List[str] = [
 ]
 
 
-def scan_iso_vocabulary(text: str, language: str = "EN") -> List[str]:
+def scan_iso_vocabulary(
+    text: str, language: str = "EN", norm_filter: Optional[List[str]] = None
+) -> List[str]:
     """
     Scan *text* for ISO vocabulary hits.
 
     Only the vocabulary for *language* is consulted (
-    ``"EN"`` → ``ISO_VOCABULARY_EN``, 
-    ``"FR"`` → ``ISO_VOCABULARY_FR``), avoiding
-    cross-language false positives.
+    ``"EN"`` → ``ISO_VOCABULARY_EN``,
+    ``"FR"`` → ``ISO_VOCABULARY_FR``), avoiding cross-language false positives.
+
+    When *norm_filter* is provided, only terms tagged for one of those standards
+    are considered — e.g. passing ``["ISO9001"]`` suppresses
+    ``"système de management environnemental"`` (ISO14001-only) entirely,
+    eliminating false-positive BM25 token injection.
 
     When any surface form matches, the **canonical key** is recorded (one entry
     per canonical term, regardless of how many surface forms matched).
@@ -61,10 +67,13 @@ def scan_iso_vocabulary(text: str, language: str = "EN") -> List[str]:
     text_lower = text.lower()
     hits: Set[str] = set()
 
-    # --- ISO vocabulary (language-specific) ---
+    # --- ISO vocabulary (language-specific, standard-scoped) ---
     vocab = ISO_VOCABULARY_EN if language == "EN" else ISO_VOCABULARY_FR
-    for canonical_key, surface_forms in vocab.items():
-        for form in surface_forms:
+    for canonical_key, entry in vocab.items():
+        # Skip terms that don't belong to any requested standard
+        if norm_filter and not any(s in entry["standards"] for s in norm_filter):
+            continue
+        for form in entry["forms"]:
             if form.lower() in text_lower:
                 hits.add(canonical_key)
                 break  # first match wins; skip remaining surface forms
@@ -113,7 +122,9 @@ _HYDE_TOKEN_THRESHOLD = 150   # estimated tokens below which HyDE always fires
 _HYDE_VOCAB_THRESHOLD = 3     # ISO vocab hits below which HyDE fires for long texts
 
 
-def should_use_hyde(text: str, language: str = "EN") -> bool:
+def should_use_hyde(
+    text: str, language: str = "EN", norm_filter: Optional[List[str]] = None
+) -> bool:
     """
     Return True when HyDE should be applied to *text*.
 
@@ -134,7 +145,7 @@ def should_use_hyde(text: str, language: str = "EN") -> bool:
     estimated_tokens = len(text.split()) * 1.3
     if estimated_tokens < _HYDE_TOKEN_THRESHOLD:
         return True
-    return len(scan_iso_vocabulary(text, language)) < _HYDE_VOCAB_THRESHOLD
+    return len(scan_iso_vocabulary(text, language, norm_filter)) < _HYDE_VOCAB_THRESHOLD
 
 # ---------------------------------------------------------------------------
 # HyDE generation
@@ -143,34 +154,84 @@ def should_use_hyde(text: str, language: str = "EN") -> bool:
 # Prompt templates — version-controlled here, not inside the function.
 # Edit these strings to iterate on HyDE output quality.
 _HYDE_PROMPT_TEMPLATE = """\
-You are writing body text from an ISO management system standard.
-Based on the following operational text, write a 2-4 sentence hypothetical ISO clause \
-that would govern this activity. Target standard(s): {standards}.
+You are an expert in ISO management system standards.
 
-Rules:
-- Use prescriptive normative language: "shall", "must", "is required to".
-- Do NOT include a clause number, section heading, or title — start directly with "The organization" or equivalent.
-- Do NOT explain, summarize, or add caveats. Output ONLY the clause body text.
+Task:
+Write a short ISO-style clause (2–4 sentences) consistent with the target standard.
 
-Operational text:
+STRICT RULES:
+- DO NOT start with generic phrases like:
+  "The organization shall establish a process"
+  "The organization is required to implement a process"
+
+- Start directly with a SPECIFIC requirement, for example:
+  "The organization shall determine..."
+  "Top management shall ensure..."
+  "The organization shall monitor..."
+
+- Use the exact technical vocabulary of the target standard.
+  Do NOT generalize into vague management language.
+
+- If keywords are provided, you MUST reuse some of them.
+
+- If a clause hint is provided, stay within that clause domain.
+
+- Do NOT include clause numbers, titles, or explanations.
+- Output ONLY the clause text.
+
+Target standard(s):
+{standards}
+
+Topic:
 {text}
 
-ISO clause body:"""
+Keywords (if any):
+{keywords}
+
+Clause hint (if any):
+{clause_hint}
+
+ISO clause:"""
 
 _HYDE_PROMPT_TEMPLATE_FR = """\
-Vous rédigez le corps d'un texte extrait d'un référentiel de système de management ISO.
-À partir du texte opérationnel suivant, rédigez une clause ISO hypothétique de 2 à 4 phrases \
-qui régirait cette activité. Référentiel(s) cible(s) : {standards}.
+Vous êtes un expert des normes ISO de systèmes de management.
 
-Règles :
-- Utilisez un langage normatif prescriptif : "doit", "est tenu de", "est requis de".
-- N'incluez PAS de numéro de clause, d'en-tête ou de titre — commencez directement par "L'organisme" ou équivalent.
-- N'expliquez pas, ne résumez pas et n'ajoutez pas de réserves. Produisez UNIQUEMENT le corps de la clause.
+Tâche :
+Rédiger une clause ISO courte (2 à 4 phrases) cohérente avec le référentiel cible.
+
+RÈGLES STRICTES :
+- NE PAS commencer par des phrases génériques comme :
+  "L'organisme est tenu de mettre en place un processus"
+  "L'organisme doit établir un processus"
+
+- Commencer directement par une exigence SPÉCIFIQUE, par exemple :
+  "L'organisme doit déterminer..."
+  "La direction doit s'assurer..."
+  "L'organisme doit surveiller..."
+
+- Utiliser le vocabulaire technique EXACT du référentiel cible.
+  Ne pas généraliser en langage de management vague.
+
+- Si des mots-clés sont fournis, vous DEVEZ en réutiliser certains.
+
+- Si un indice de clause est fourni, rester dans ce domaine.
+
+- Ne pas inclure de numéro de clause, titre ou explication.
+- Produire UNIQUEMENT le texte de la clause.
+
+Référentiel(s) cible(s) :
+{standards}
 
 Texte opérationnel :
 {text}
 
-Corps de la clause ISO :"""
+Mots-clés (si disponibles) :
+{keywords}
+
+Indice de clause (si disponible) :
+{clause_hint}
+
+Clause ISO :"""
 
 _HYDE_TIMEOUT: float = float(os.getenv("HYDE_TIMEOUT", "15.0"))  # 15s covers llama3.2:3b locally (~10 tok/s × 100 tok); cloud APIs are faster
 _HYDE_RETRIES: int = 2        # total attempts before giving up
@@ -307,7 +368,7 @@ async def transform(
     qdrant_filter = build_norm_filter(norm_filter, language)
 
     # 2 + 3. HyDE
-    hyde_triggered = should_use_hyde(query_text, language)
+    hyde_triggered = should_use_hyde(query_text, language, norm_filter)
     if hyde_triggered:
         hyde_text = await generate_hyde_text(query_text, norm_filter, language)
         if hyde_text:
@@ -320,8 +381,8 @@ async def transform(
         embed_text = query_text
         hyde_used = False
 
-    # 4. ISO vocabulary scan (on post-HyDE text)
-    iso_vocab_hits = scan_iso_vocabulary(embed_text, language)
+    # 4. ISO vocabulary scan (on post-HyDE text, scoped to requested standards)
+    iso_vocab_hits = scan_iso_vocabulary(embed_text, language, norm_filter)
 
     # 5. BM25 tokens
     base_tokens = embed_text.lower().split()
