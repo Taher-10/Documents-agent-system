@@ -27,6 +27,7 @@ import re
 from typing import Dict, List
 
 from rag.ingestion_pipeline.chunker.models import NormChunk
+from rag.shared.bm25.tokenizer import tokenize_for_bm25
 
 
 # ==============================================================================
@@ -206,17 +207,10 @@ class Enricher:
     @staticmethod
     def _bm25_tokens(chunk: NormChunk) -> List[str]:
         """
-        Build the BM25 token list for a chunk from three sources.
+        Build the BM25 token list for a chunk.
 
-        Sources (applied in order, with order-preserving deduplication):
-          1. Word tokens from chunk.text — stop-word filtered alphabetic words.
-          2. Clause-digit tokens — digits extracted from the clause number,
-             e.g. "7.5.2" → ["7", "5", "2"].  Enables exact-digit lookups.
-          3. Keyword tokens — word-level tokens from chunk.keywords (which must
-             already be populated before calling this method).
-
-        These tokens are stored in chunk.bm25_tokens and are NEVER sent to
-        ChromaDB (enforced via NormChunk field metadata={"chroma": False}).
+        Delegates to the shared canonical tokenizer (rag.shared.bm25.tokenizer)
+        so that index-time and query-time tokenisation are always identical.
 
         Parameters
         ----------
@@ -226,26 +220,11 @@ class Enricher:
         -------
         List[str] — deduplicated tokens in source order.
         """
-        clean       = _MARKDOWN_NOISE_RE.sub(' ', chunk.text)
-        word_tokens = [
-            w.lower() for w in _WORD_RE.findall(clean)
-            if w.lower() not in _STOP_WORDS
-        ]
-        # Digit tokens from clause number (non-digit chars stripped, then split)
-        clause_tokens = re.sub(r'[^0-9]', ' ', chunk.clause_number).split()
-
-        # Word-level tokens from TF-IDF keywords (keywords set in _tfidf_keywords)
-        kw_tokens: List[str] = []
-        for kw in chunk.keywords:
-            kw_tokens.extend(kw.lower().split())
-
-        seen:   set       = set()
-        result: List[str] = []
-        for t in word_tokens + clause_tokens + kw_tokens:
-            if t not in seen:
-                seen.add(t)
-                result.append(t)
-        return result
+        return tokenize_for_bm25(
+            text=chunk.text,
+            clause_ref=chunk.clause_number,
+            bonus_terms=chunk.keywords,
+        )
 
     # ── Public API ────────────────────────────────────────────────────────────
 

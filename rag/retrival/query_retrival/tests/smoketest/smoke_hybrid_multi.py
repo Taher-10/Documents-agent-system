@@ -41,6 +41,7 @@ from qdrant_client import QdrantClient
 from rag.retrival.models import TransformedQuery, RetrievedChunk
 from rag.retrival.query_retrival.retriever import HybridRetriever, EmptyCorpusError
 from rag.retrival.query_transformer.Querytransformer import transform
+from rag.shared.bm25.tokenizer import tokenize_for_bm25
 
 # Re-use the canonical test cases and display helpers from smoke_dense_multi
 sys.path.insert(0, os.path.dirname(__file__))
@@ -85,7 +86,8 @@ class HybridResult:
     matched_at: Optional[int]
     hyde_used: bool
     iso_vocab_hits: List[str]
-    bm25_token_count: int
+    bm25_tokens: List[str]        # full query BM25 token list
+    top3_chunks: List[RetrievedChunk]  # full top-3 chunks for token reconstruction
     embed_text_preview: str   # first 80 chars of what was actually embedded
     error: Optional[str]
 
@@ -106,8 +108,9 @@ async def run_tests(retriever: HybridRetriever) -> List[HybridResult]:
         except Exception as exc:
             results.append(HybridResult(
                 tc=tc, passed=False, top3=[], matched_at=None,
-                hyde_used=False, iso_vocab_hits=[], bm25_token_count=0,
-                embed_text_preview="", error=f"transform() failed: {type(exc).__name__}: {exc}",
+                hyde_used=False, iso_vocab_hits=[], bm25_tokens=[],
+                top3_chunks=[], embed_text_preview="",
+                error=f"transform() failed: {type(exc).__name__}: {exc}",
             ))
             continue
 
@@ -118,7 +121,7 @@ async def run_tests(retriever: HybridRetriever) -> List[HybridResult]:
             results.append(HybridResult(
                 tc=tc, passed=False, top3=[], matched_at=None,
                 hyde_used=tq.hyde_used, iso_vocab_hits=tq.iso_vocab_hits,
-                bm25_token_count=len(tq.bm25_tokens),
+                bm25_tokens=tq.bm25_tokens, top3_chunks=[],
                 embed_text_preview=tq.embed_text[:80],
                 error=f"EmptyCorpusError: {exc}",
             ))
@@ -127,7 +130,7 @@ async def run_tests(retriever: HybridRetriever) -> List[HybridResult]:
             results.append(HybridResult(
                 tc=tc, passed=False, top3=[], matched_at=None,
                 hyde_used=tq.hyde_used, iso_vocab_hits=tq.iso_vocab_hits,
-                bm25_token_count=len(tq.bm25_tokens),
+                bm25_tokens=tq.bm25_tokens, top3_chunks=[],
                 embed_text_preview=tq.embed_text[:80],
                 error=f"{type(exc).__name__}: {exc}",
             ))
@@ -147,7 +150,8 @@ async def run_tests(retriever: HybridRetriever) -> List[HybridResult]:
             matched_at=matched_at,
             hyde_used=tq.hyde_used,
             iso_vocab_hits=tq.iso_vocab_hits,
-            bm25_token_count=len(tq.bm25_tokens),
+            bm25_tokens=tq.bm25_tokens,
+            top3_chunks=chunks[:3],
             embed_text_preview=tq.embed_text[:80],
             error=None,
         ))
@@ -170,10 +174,27 @@ def print_detail(r: HybridResult) -> None:
 
     # Transformer diagnostics
     hyde_flag = "YES" if r.hyde_used else "no"
-    print(f"     hyde={hyde_flag:<4}  bm25_tokens={r.bm25_token_count}  "
+    print(f"     hyde={hyde_flag:<4}  bm25_tokens={len(r.bm25_tokens)}  "
           f"iso_hits={r.iso_vocab_hits or '[]'}")
     if r.hyde_used:
         print(f"     embed_text: \"{r.embed_text_preview}…\"")
+
+    # BM25 token lists — query side
+    print(f"     query bm25 tokens ({len(r.bm25_tokens)}): {r.bm25_tokens}")
+
+    # BM25 token lists — chunk side (reconstructed) + overlap
+    if r.top3_chunks:
+        print(f"     --- top-3 chunk BM25 tokens ---")
+        for idx, chunk in enumerate(r.top3_chunks, start=1):
+            chunk_tokens = tokenize_for_bm25(
+                text=chunk.text,
+                clause_ref=chunk.clause_number,
+                bonus_terms=chunk.keywords,
+            )
+            overlap = sorted(set(r.bm25_tokens) & set(chunk_tokens))
+            print(f"       #{idx}  clause={chunk.clause_number}  "
+                  f"chunk_bm25({len(chunk_tokens)}): {chunk_tokens}")
+            print(f"           overlap: {len(overlap)} tokens  {overlap}")
 
     print(f"     top-3 results: {r.top3}")
     if r.matched_at:

@@ -22,6 +22,7 @@ from typing import List, Optional, Set
 from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
 
 from rag.retrival.models import TransformedQuery
+from rag.shared.bm25.tokenizer import tokenize_for_bm25
 
 from .vocabulary import ISO_VOCABULARY_EN, ISO_VOCABULARY_FR
 
@@ -98,18 +99,23 @@ def augment_bm25_tokens(base_tokens: List[str], iso_hits: List[str]) -> List[str
     to match the ingestion tokenisation format where "8.5.1" was stored as
     individual tokens ["8", "5", "1"].
 
-    All other hits (canonical phrases, modal terms) are injected as-is.
+    All other hits (canonical phrases, modal terms) are split into unigrams
+    before injection so that multi-word phrases like "corrective action" produce
+    ["corrective", "action"] — matching how ingestion splits keyword bigrams via
+    the shared tokenizer.
     The original *base_tokens* are always preserved.
     """
     token_set: Set[str] = set(base_tokens)
 
     for term in iso_hits:
         if CLAUSE_PATTERN.fullmatch(term):
-            # Expand "8.5.1" → "8", "5", "1"
+            # Expand "8.5.1" -> "8", "5", "1"
             for digit_part in term.split("."):
                 token_set.add(digit_part)
         else:
-            token_set.add(term)
+            # Split bigrams/phrases into unigrams to match index-time tokenisation
+            for word in term.lower().split():
+                token_set.add(word)
 
     return list(token_set)
 
@@ -122,7 +128,10 @@ _HYDE_TOKEN_THRESHOLD = 150   # estimated tokens below which HyDE fires when no 
 
 
 def should_use_hyde(
-    text: str, language: str = "EN", norm_filter: Optional[List[str]] = None
+    text: str, 
+    language: str = "EN", 
+    norm_filter: Optional[List[str]] = None,
+    min_vocab_terms: int = 2
 ) -> bool:
     """
     Return True when HyDE should be applied to *text*.
@@ -133,9 +142,9 @@ def should_use_hyde(
     1. **Clause number present** — a clause reference (e.g. "7.2", "8.5.1")
        makes the query already specific. Skip HyDE.
 
-    2. **ISO vocabulary anchor** — 1+ canonical ISO term match (excluding
-       clause numbers and modal terms) means the dense encoder already has
-       a strong anchor. Skip HyDE.
+    2. **ISO vocabulary anchor** — `min_vocab_terms` or more canonical ISO term 
+       matches (excluding clause numbers and modal terms) means the dense 
+       encoder already has a strong anchor. Skip HyDE.
 
     3. **Short text with no anchors** — estimated tokens < 150 AND zero
        vocabulary matches → signal is too weak, trigger HyDE.
@@ -150,9 +159,9 @@ def should_use_hyde(
     if any(CLAUSE_PATTERN.fullmatch(h) for h in hits):
         return False
 
-    # Signal 2: 1+ ISO vocabulary match (non-clause, non-modal) → anchored, skip HyDE
+    # Signal 2: min_vocab_terms+ ISO vocabulary match (non-clause, non-modal) → anchored, skip HyDE
     vocab_hits = [h for h in hits if not CLAUSE_PATTERN.fullmatch(h) and h not in modal_set]
-    if vocab_hits:
+    if len(vocab_hits) >= min_vocab_terms:
         return False
 
     # Signal 3: short text with zero vocabulary matches → trigger HyDE
@@ -398,7 +407,10 @@ def build_norm_filter(norm_filter: List[str], language: str = "EN") -> Filter:
 # ---------------------------------------------------------------------------
 
 async def transform(
-    query_text: str, norm_filter: List[str], language: str = "EN"
+    query_text: str, 
+    norm_filter: List[str], 
+    language: str = "EN",
+    min_vocab_terms: int = 1
 ) -> TransformedQuery:
     """
     Full pipeline entry point — orchestrates all sub-systems.
@@ -432,7 +444,12 @@ async def transform(
     qdrant_filter = build_norm_filter(norm_filter, language)
 
     # 2 + 3. HyDE
-    hyde_triggered = should_use_hyde(query_text, language, norm_filter)
+    hyde_triggered = should_use_hyde(
+        query_text, 
+        language, 
+        norm_filter,
+        min_vocab_terms=min_vocab_terms
+    )
     if hyde_triggered:
         # Pre-scan the raw query for vocabulary anchors BEFORE calling the LLM.
         # This anchors the HyDE prompt without polluting the post-HyDE vocab scan.
@@ -460,7 +477,13 @@ async def transform(
     iso_vocab_hits = scan_iso_vocabulary(embed_text, language, norm_filter)
 
     # 5. BM25 tokens
-    base_tokens = embed_text.lower().split()
+    # Use the shared canonical tokenizer for word extraction (same _WORD_RE +
+    # stop-word filter as ingestion), then augment with ISO vocabulary hits.
+    clause_hit = CLAUSE_PATTERN.search(embed_text)
+    base_tokens = tokenize_for_bm25(
+        text=embed_text,
+        clause_ref=clause_hit.group(0) if clause_hit else None,
+    )
     bm25_tokens = augment_bm25_tokens(base_tokens, iso_vocab_hits)
 
     # 6. Assemble result
