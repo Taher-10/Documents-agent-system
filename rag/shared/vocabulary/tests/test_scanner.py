@@ -12,7 +12,12 @@ Run:
 """
 import unittest
 
-from rag.shared.vocabulary.scanner import scan_iso_vocabulary
+from rag.shared.vocabulary.scanner import (
+    scan_iso_vocabulary,
+    MODAL_TERMS,
+    MODAL_TERMS_EN,
+    MODAL_TERMS_FR,
+)
 
 
 class TestNCFalsePositiveFR(unittest.TestCase):
@@ -94,6 +99,131 @@ class TestNCTruePositiveEN(unittest.TestCase):
         text = "Track each NC through to closure"
         hits = scan_iso_vocabulary(text, language="EN", norm_filter=["ISO9001"])
         self.assertIn("nonconformity", hits)
+
+
+class TestModalTermsFR(unittest.TestCase):
+    """French modal terms: true positives and word-boundary guards."""
+
+    def test_doit_standalone_hits(self):
+        text = "L'organisme doit établir une procédure documentée."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("doit", hits)
+
+    def test_doit_inside_endroit_no_hit(self):
+        text = "l'endroit où les documents sont conservés"
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertNotIn("doit", hits)
+
+    def test_doivent_standalone_hits(self):
+        text = "Les parties intéressées doivent être identifiées."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("doivent", hits)
+
+    def test_peut_standalone_hits(self):
+        text = "L'organisme peut choisir de documenter."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("peut", hits)
+
+    def test_peuvent_standalone_hits(self):
+        text = "Ces méthodes peuvent être combinées."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("peuvent", hits)
+
+    def test_peut_does_not_match_inside_peuvent(self):
+        text = "Les critères peuvent être définis localement."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("peuvent", hits)
+        self.assertNotIn("peut", hits)
+
+    def test_il_convient_hits(self):
+        text = "Il convient d'évaluer les risques associés."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("il convient", hits)
+
+    def test_est_tenu_de_hits(self):
+        text = "L'organisme est tenu de conserver des informations documentées."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("est tenu de", hits)
+
+    def test_est_permis_hits(self):
+        text = "Il est permis d'utiliser d'autres méthodes."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("est permis", hits)
+
+    def test_il_est_possible_de_hits(self):
+        text = "Il est possible de combiner les processus."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("il est possible de", hits)
+
+
+class TestModalTermsEN(unittest.TestCase):
+    """English modal terms must continue to work after the FR split."""
+
+    def test_shall_hits(self):
+        text = "The organization shall establish a QMS."
+        hits = scan_iso_vocabulary(text, language="EN")
+        self.assertIn("shall", hits)
+
+    def test_should_hits(self):
+        text = "The organization should consider stakeholder needs."
+        hits = scan_iso_vocabulary(text, language="EN")
+        self.assertIn("should", hits)
+
+    def test_may_hits(self):
+        text = "The organization may choose to document this."
+        hits = scan_iso_vocabulary(text, language="EN")
+        self.assertIn("may", hits)
+
+    def test_must_hits(self):
+        text = "Records must be retained for a defined period."
+        hits = scan_iso_vocabulary(text, language="EN")
+        self.assertIn("must", hits)
+
+    def test_is_required_to_hits(self):
+        text = "The supplier is required to demonstrate conformity."
+        hits = scan_iso_vocabulary(text, language="EN")
+        self.assertIn("is required to", hits)
+
+    def test_can_hits(self):
+        text = "The audit team can include external members."
+        hits = scan_iso_vocabulary(text, language="EN")
+        self.assertIn("can", hits)
+
+    def test_modal_terms_alias_is_en_list(self):
+        """MODAL_TERMS backward-compat alias must be the same object as MODAL_TERMS_EN."""
+        self.assertIs(MODAL_TERMS, MODAL_TERMS_EN)
+
+
+class TestModalLanguageIsolation(unittest.TestCase):
+    """Language gate must prevent cross-language modal hits."""
+
+    def test_fr_modal_text_with_en_language_no_fr_hits(self):
+        text = "L'organisme doit établir une procédure."
+        hits = scan_iso_vocabulary(text, language="EN")
+        self.assertNotIn("doit", hits)
+
+    def test_en_modal_text_with_fr_language_no_en_hits(self):
+        text = "The organization shall document its processes."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertNotIn("shall", hits)
+
+    def test_mixed_text_en_language_only_en_modals(self):
+        text = "The organization shall comply. L'organisme doit aussi."
+        hits = scan_iso_vocabulary(text, language="EN")
+        self.assertIn("shall", hits)
+        self.assertNotIn("doit", hits)
+
+    def test_mixed_text_fr_language_only_fr_modals(self):
+        text = "The organization shall comply. L'organisme doit aussi."
+        hits = scan_iso_vocabulary(text, language="FR")
+        self.assertIn("doit", hits)
+        self.assertNotIn("shall", hits)
+
+    def test_default_language_is_en(self):
+        text = "The organization shall establish procedures."
+        hits = scan_iso_vocabulary(text)
+        self.assertIn("shall", hits)
+        self.assertNotIn("doit", hits)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,9 @@ identically, preserving BM25 sparse-match symmetry.
 Public API
 ----------
     CLAUSE_PATTERN      — compiled regex for clause numbers (e.g. "8.5.1")
-    MODAL_TERMS         — normative-weight term list (shall, should, may, ...)
+    MODAL_TERMS_EN      — normative-weight terms, English (ISO Directives Part 2)
+    MODAL_TERMS_FR      — normative-weight terms, French (ISO Directives Part 2)
+    MODAL_TERMS         — backward-compat alias for MODAL_TERMS_EN
     scan_iso_vocabulary(text, language, norm_filter) -> List[str]
 """
 
@@ -22,8 +24,8 @@ from .vocabulary import ISO_VOCABULARY_EN, ISO_VOCABULARY_FR
 # Matches clause numbers like "8.5", "7.4.1", "4.3.2.1"
 CLAUSE_PATTERN = re.compile(r'\b\d+\.\d+(?:\.\d+)*\b')
 
-# Modal / normative-weight terms (category 3)
-MODAL_TERMS: List[str] = [
+# Modal / normative-weight terms — ISO Directives Part 2, English
+MODAL_TERMS_EN: List[str] = [
     "shall",
     "must",
     "is required to",
@@ -33,6 +35,21 @@ MODAL_TERMS: List[str] = [
     "is permitted",
     "can",
 ]
+
+# Modal / normative-weight terms — ISO Directives Part 2, French
+MODAL_TERMS_FR: List[str] = [
+    "doit",                  # shall (singular) — \b guard prevents "endroit" false-positive
+    "doivent",               # shall (plural)
+    "est tenu de",           # is required to
+    "il convient",           # should / it is recommended
+    "peut",                  # may (singular)
+    "peuvent",               # may (plural)
+    "est permis",            # is permitted
+    "il est possible de",    # can
+]
+
+# Backward-compat alias — external code referencing MODAL_TERMS continues to work
+MODAL_TERMS: List[str] = MODAL_TERMS_EN
 
 # ── Surface-form pattern cache ────────────────────────────────────────────────
 # Compiled once per unique surface form (lazy init) to avoid recompiling
@@ -101,9 +118,10 @@ def scan_iso_vocabulary(
                 hits.add(canonical_key)
                 break  # first match wins; skip remaining surface forms
 
-    # --- Modal / normative-weight terms ---
-    for term in MODAL_TERMS:
-        if term in text_lower:
+    # --- Modal / normative-weight terms (language-aware, word-boundary guarded) ---
+    _modal_list = MODAL_TERMS_FR if language == "FR" else MODAL_TERMS_EN
+    for term in _modal_list:
+        if _form_pattern(term).search(text_lower):
             hits.add(term)
 
     # --- Clause number patterns ---

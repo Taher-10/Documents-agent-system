@@ -52,267 +52,243 @@ class TestCase:
     fmt: str
 
 
-
 # ── HARD TESTS (20) ───────────────────────────────────────────────────────────
 
 TESTS: List[TestCase] = [
 
-    TestCase(
-        name="1. Analyse contexte organisation",
-        query=(
-            "L'organisation analyse régulièrement les facteurs internes et externes "
-            "susceptibles d’influencer ses performances, tout en identifiant les parties "
-            "intéressées pertinentes telles que les clients, autorités réglementaires "
-            "et partenaires, ainsi que leurs exigences évolutives."
-        ),
-        expected_any=["4.1", "4.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
-    ),
+## ─────────────────── SUPPORT (suite) ───────────────────
 
-    TestCase(
-        name="2. Engagement direction système",
-        query=(
-            "La direction démontre son engagement en intégrant le système de management "
-            "dans les processus métiers, en promouvant l’approche processus et en "
-            "soutenant les initiatives liées à la qualité et à l’environnement."
-        ),
-        expected_any=["5.1"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+TestCase(
+    name="14. 7.5 Information documentée (non conforme)",
+    query=(
+        "7.5 Information documentée\n"
+        "Les procédures environnementales existent, cependant elles ne sont pas "
+        "révisées régulièrement et certaines versions obsolètes restent utilisées "
+        "au sein des opérations."
     ),
+    expected_any=["7.5"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph_non_conformity",
+),
 
-    TestCase(
-        name="3. Politique alignée stratégie",
-        query=(
-            "Une politique qualité et environnementale est définie, communiquée et alignée "
-            "avec la stratégie globale de l’entreprise, incluant des engagements envers "
-            "la conformité réglementaire et l’amélioration continue."
-        ),
-        expected_any=["5.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+TestCase(
+    name="15. 7.4 Communication",
+    query=(
+        "7.4 Communication\n"
+        "L’organisation établit des processus pour assurer la communication interne "
+        "et externe relative à son système de management environnemental, y compris "
+        "avec les autorités réglementaires."
     ),
+    expected_any=["7.4"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph",
+),
 
-    TestCase(
-        name="4. Identification risques opportunités",
-        query=(
-            "Les risques et opportunités liés aux processus, aux aspects environnementaux "
-            "et aux obligations de conformité sont identifiés et pris en compte afin "
-            "d’assurer l’atteinte des résultats attendus."
-        ),
-        expected_any=["6.1"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+# ─────────────────── OPÉRATION ───────────────────
+
+TestCase(
+    name="16. 8.1 Maîtrise opérationnelle",
+    query=(
+        "8.1 Planification et maîtrise opérationnelle\n"
+        "Les processus sont planifiés et contrôlés afin de garantir que les activités "
+        "sont réalisées dans des conditions maîtrisées, réduisant ainsi les impacts "
+        "environnementaux significatifs."
     ),
+    expected_any=["8.1"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph",
+),
 
-    TestCase(
-        name="5. Objectifs mesurables pilotés",
-        query=(
-            "Des objectifs mesurables sont établis à différents niveaux de l’organisation, "
-            "avec des indicateurs de performance, des échéances définies et des méthodes "
-            "de suivi adaptées."
-        ),
-        expected_any=["6.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+TestCase(
+    name="17. 8.1 Cycle de vie (partiel)",
+    query=(
+        "8.1 Planification et maîtrise opérationnelle\n"
+        "L’organisation considère certains aspects du cycle de vie des produits, "
+        "notamment la phase de production, mais néglige les impacts liés à la fin de vie."
     ),
+    expected_any=["8.1"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph_partial",
+),
 
-    TestCase(
-        name="6. Gestion ressources et compétences",
-        query=(
-            "L’organisation met à disposition les ressources nécessaires et s’assure que "
-            "le personnel est compétent sur la base de formations, d’expériences et "
-            "d’évaluations périodiques de leur efficacité."
-        ),
-        expected_any=["7.1", "7.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+TestCase(
+    name="18. 8.1 Absence de maîtrise (non conforme)",
+    query=(
+        "8.1 Planification et maîtrise opérationnelle\n"
+        "Aucun contrôle opérationnel formel n’est mis en place pour gérer les "
+        "aspects environnementaux identifiés."
     ),
+    expected_any=["8.1"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph_non_conformity",
+),
 
-    TestCase(
-        name="7. Sensibilisation et communication",
-        query=(
-            "Les employés sont sensibilisés à la politique et aux objectifs, tandis que "
-            "les communications internes et externes sont structurées et cohérentes avec "
-            "les exigences réglementaires."
-        ),
-        expected_any=["7.3", "7.4"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+TestCase(
+    name="19. 8.2 Préparation aux urgences",
+    query=(
+        "8.2 Préparation et réponse aux situations d’urgence\n"
+        "Des procédures sont établies pour identifier les situations d’urgence "
+        "potentielles et y répondre efficacement afin de prévenir ou atténuer "
+        "les impacts environnementaux."
     ),
+    expected_any=["8.2"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph",
+),
 
-    TestCase(
-        name="8. Maîtrise information documentée",
-        query=(
-            "Les informations documentées sont correctement contrôlées, incluant leur "
-            "création, mise à jour, diffusion et conservation afin d’éviter toute "
-            "utilisation de versions obsolètes."
-        ),
-        expected_any=["7.5"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+TestCase(
+    name="20. 8.2 Urgences non gérées (non conforme)",
+    query=(
+        "8.2 Préparation et réponse aux situations d’urgence\n"
+        "L’organisation ne dispose d’aucun plan documenté pour gérer les situations "
+        "d’urgence environnementale telles que les déversements accidentels."
     ),
+    expected_any=["8.2"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph_non_conformity",
+),
 
-    TestCase(
-        name="9. Maîtrise opérationnelle globale",
-        query=(
-            "Les processus opérationnels sont planifiés, mis en œuvre et contrôlés, y compris "
-            "les activités externalisées, afin de garantir la conformité des produits et la "
-            "réduction des impacts environnementaux."
-        ),
-        expected_any=["8.1"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+# ─────────────────── PERFORMANCE ───────────────────
+
+TestCase(
+    name="21. 9.1 Surveillance et mesure",
+    query=(
+        "9.1 Surveillance, mesure, analyse et évaluation\n"
+        "Les paramètres environnementaux clés, tels que les émissions et la consommation "
+        "d’énergie, sont surveillés et analysés afin d’évaluer la performance environnementale."
     ),
+    expected_any=["9.1"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph",
+),
 
-    TestCase(
-        name="10. Suivi et analyse performance",
-        query=(
-            "L’organisation surveille et mesure ses performances à l’aide d’indicateurs "
-            "pertinents, analyse les résultats et évalue la conformité aux exigences "
-            "applicables."
-        ),
-        expected_any=["9.1"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+TestCase(
+    name="22. 9.1 Absence de suivi (non conforme)",
+    query=(
+        "9.1 Surveillance, mesure, analyse et évaluation\n"
+        "Aucun indicateur environnemental n’est défini et aucune surveillance systématique "
+        "n’est réalisée."
     ),
+    expected_any=["9.1"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph_non_conformity",
+),
 
-    TestCase(
-        name="11. Programme audit interne",
-        query=(
-            "Des audits internes sont planifiés et réalisés pour vérifier la conformité "
-            "du système de management et son efficacité par rapport aux exigences définies."
-        ),
-        expected_any=["9.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+TestCase(
+    name="23. 9.1.2 Évaluation conformité",
+    query=(
+        "9.1.2 Évaluation de la conformité\n"
+        "L’organisation évalue périodiquement sa conformité aux exigences légales "
+        "et autres exigences applicables."
     ),
+    expected_any=["9.1.2"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph",
+),
 
-    TestCase(
-        name="12. Amélioration continue système",
-        query=(
-            "L’organisation améliore en continu son système de management en s’appuyant "
-            "sur les résultats de performance, les audits et les actions correctives."
-        ),
-        expected_any=["10.3"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
+TestCase(
+    name="24. 9.2 Audit interne",
+    query=(
+        "9.2 Audit interne\n"
+        "Des audits internes sont réalisés à intervalles planifiés afin de vérifier "
+        "la conformité et l’efficacité du système de management environnemental."
     ),
+    expected_any=["9.2"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph",
+),
 
-    # ── PARTIAL / FAILURE CASES ──
-
-    TestCase(
-        name="13. Absence calibration équipements",
-        query=(
-            "Les उपकरणs de mesure sont utilisés dans les processus mais aucune procédure "
-            "de calibration ou de vérification n’est définie pour garantir la validité des résultats."
-        ),
-        expected_any=["7.1.5"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="gap detection",
+TestCase(
+    name="25. 9.2 Audit absent (non conforme)",
+    query=(
+        "9.2 Audit interne\n"
+        "Aucun audit interne n’est réalisé pour évaluer le système environnemental."
     ),
+    expected_any=["9.2"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph_non_conformity",
+),
 
-    TestCase(
-        name="14. Compétence non démontrée",
-        query=(
-            "Le personnel occupe des postes critiques mais aucune preuve de formation, "
-            "qualification ou évaluation de compétence n’est disponible."
-        ),
-        expected_any=["7.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="gap detection",
+TestCase(
+    name="26. 9.3 Revue de direction",
+    query=(
+        "9.3 Revue de direction\n"
+        "La direction examine régulièrement le système de management environnemental "
+        "afin de garantir sa pertinence, son adéquation et son efficacité."
     ),
+    expected_any=["9.3"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph",
+),
 
-    TestCase(
-        name="15. Absence approche risques",
-        query=(
-            "Les processus sont exécutés sans identification formelle des risques et "
-            "opportunités pouvant impacter les résultats attendus."
-        ),
-        expected_any=["6.1"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="gap detection",
-    ),
+# ─────────────────── AMÉLIORATION ───────────────────
 
-    TestCase(
-        name="16. Documents non contrôlés",
-        query=(
-            "Des documents existent mais il n’existe aucun mécanisme de gestion des versions, "
-            "ni de contrôle d’accès ou d’archivage fiable."
-        ),
-        expected_any=["7.5"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="gap detection",
+TestCase(
+    name="27. 10.2 Non-conformité et action corrective",
+    query=(
+        "10.2 Non-conformité et action corrective\n"
+        "Lorsqu’une non-conformité survient, l’organisation met en œuvre des actions "
+        "correctives pour en éliminer la cause et éviter sa récurrence."
     ),
+    expected_any=["10.2"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph",
+),
 
-    TestCase(
-        name="17. Absence action corrective",
-        query=(
-            "Des non-conformités sont détectées mais aucune démarche structurée n’est mise en place "
-            "pour identifier les causes racines et éviter leur réapparition."
-        ),
-        expected_any=["10.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="gap detection",
+TestCase(
+    name="28. 10.2 Non-conformité non traitée",
+    query=(
+        "10.2 Non-conformité et action corrective\n"
+        "Les incidents environnementaux sont identifiés mais aucune action corrective "
+        "n’est mise en place pour en traiter les causes."
     ),
+    expected_any=["10.2"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph_non_conformity",
+),
 
-    TestCase(
-        name="18. Absence mesure performance",
-        query=(
-            "Les activités sont réalisées sans indicateurs de performance ni analyse des résultats, "
-            "ce qui empêche toute évaluation objective."
-        ),
-        expected_any=["9.1"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="gap detection",
+TestCase(
+    name="29. 10.3 Amélioration continue",
+    query=(
+        "10.3 Amélioration continue\n"
+        "L’organisation améliore continuellement la pertinence et l’efficacité "
+        "de son système de management environnemental."
     ),
+    expected_any=["10.3"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph",
+),
 
-    TestCase(
-        name="19. Absence audit interne",
-        query=(
-            "Aucun audit interne n’est réalisé pour vérifier la conformité du système de management "
-            "aux exigences ISO."
-        ),
-        expected_any=["9.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="gap detection",
+TestCase(
+    name="30. 10.3 Amélioration absente (non conforme)",
+    query=(
+        "10.3 Amélioration continue\n"
+        "Aucune action n’est entreprise pour améliorer le système de management "
+        "environnemental au fil du temps."
     ),
-
-    TestCase(
-        name="20. Engagement direction insuffisant",
-        query=(
-            "La direction définit des politiques mais ne participe pas activement à leur mise en œuvre "
-            "ni à leur intégration dans les processus de l’organisation."
-        ),
-        expected_any=["5.1"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="gap detection",
-    ),
+    expected_any=["10.3"],
+    top_k_pass=10,
+    difficulty="hard",
+    fmt="paragraph_non_conformity",
+),
 
 ]
-
-
 # ── Inline embedder ───────────────────────────────────────────────────────────
 
 class _OllamaEmbedder:

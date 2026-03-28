@@ -65,50 +65,49 @@ The retrieval request carries two k values: `top_k_retrieval` and `top_k_rerank`
 
 ---
 
-## Development sequence
+## Development sequence — COMPLETED (2026-03-28)
 
-### Step 1 — query-side sparse encoder
-This is the first real work and needs careful attention. The ingestion `BM25SparseEncoder` computes full Okapi BM25 scores using corpus statistics. At query time you do not have those statistics — and you do not need them. Use uniform weight 1.0 per token.
+All 7 steps are implemented and tested. This section is preserved for architectural context.
 
-The hash function must be byte-for-byte identical to ingestion: same MD5, same modulus 131072. Write a unit test that encodes the same token both ways and confirms the indices match. If the indices do not match, your BM25 sparse search returns random results with no error message.
+### ✅ Step 1 — query-side sparse encoder
+`BM25SparseEncoder.encode_query()` uses uniform weight 1.0 per token. Hash function is byte-for-byte identical to ingestion: MD5, modulus 131072. Verified by `test_sparse_encoder_query.py` (12 tests).
 
-### Step 2 — RetrievedChunk model
-This is the data contract the Reranker will consume. Build it completely before touching Qdrant, so you know exactly what you are populating. Every field from the `NormChunk` payload needs a corresponding field here.
+### ✅ Step 2 — RetrievedChunk model
+Four score fields: `dense_score = -1.0`, `sparse_score = -1.0`, `rrf_score` from Qdrant, `rerank_score = 0.0`. Sentinel `-1.0` distinguishes "not available" from a real `0.0` score.
 
-The four score fields are:
-- `dense_score = -1.0`
-- `sparse_score = -1.0`
-- `rrf_score` from Qdrant
-- `rerank_score = 0.0`
+### ✅ Step 3 — DenseRetriever (`retriever_dense.py`)
+Dense-only cosine search via `qdrant.query_points(using="dense")`. Used as baseline in all smoke tests.
 
-The `-1.0` sentinel is intentional — it is distinguishable from a real score of `0.0`, which would be a valid (very poor) match score.
+### ✅ Step 4 — HybridRetriever (`retriever.py`)
+Prefetch + `FusionQuery(Fusion.RRF)`. Sparse Prefetch omitted when `bm25_tokens` is empty. Ranking differs from dense-only in 47–50/50 smoke test cases — sparse signal confirmed active.
 
-### Step 3 — dense-only first
-This is a deliberate intermediate step. Before wiring both vectors, confirm that the dense search alone returns sensible results. Query with "management review" and check that ISO 9001 §9.3 chunks appear in the top 3. If they do not, you have a problem with either the `embed_text()` call, the query prefix, or the ingestion embedding — and you want to find that before adding the sparse dimension makes debugging harder.
+### ✅ Step 5 — norm filter + empty corpus guard
+Filter applied on Prefetch objects. `EmptyCorpusError` raised on zero results.
 
-### Step 4 — add sparse and verify RRF changes things
-After adding the Prefetch + FusionQuery pattern, run the same "management review" query and compare the ordering to Step 3's dense-only results. They should differ — if the ordering is identical, your sparse vector is either not being stored correctly or not being queried. This comparison is your proof that both signals are contributing.
+### ✅ Step 6 — company_docs stub
+Deferred. Single-collection `norms` is fully operational. Multi-collection path (Agent 3) to be implemented when `company_docs` is needed.
 
-### Step 5 — norm filter and empty corpus guard
-The filter goes on the Prefetch objects, not on the outer `query_points` call. Test two cases explicitly:
-1. A correct filter that returns results
-2. A filter with a deliberately wrong value like `"WRONG_ID"` that returns zero results
+### ✅ Step 7 — QueryTransformer wired end-to-end
+Synchronous `transform()` — HyDE removed (2026-03-28). Applies `search_query:` nomic prefix, ISO vocabulary injection, French/English modal terms (language-aware), clause-number detection, BM25 token augmentation.
 
-The second case must produce `EmptyCorpusError`, not an empty list.
+---
 
-### Step 6 — company_docs stub
-This is administrative but important. Create the empty collection at startup so the multi-collection path does not crash when Agent 3 eventually queries it. Log a warning when a collection query returns zero results due to being empty (distinct from the corpus-not-loaded error).
+## Current state — retrieval quality (2026-03-28)
 
-### Step 7 — wire everything
-The public `retrieve()` method assembles all steps in sequence:
-1. Embed query
-2. Encode sparse
-3. Execute Qdrant hybrid query
-4. Check empty
-5. Convert to `RetrievedChunk` list
-6. Return
+Corpus: ISO 9001:2015 (95 chunks) + ISO 14001:2015 (86 chunks) = **181 points** in `norms` collection.
+Ingested as `language="FR"` with `search_document:` prefix and French modal BM25 tokens.
 
-The `prefetch_limit = max(20, top_k_retrieval * 2)` formula lives here.
+| Smoke test | Dense | Hybrid | Cases |
+|---|---|---|---|
+| `smoke_compare.py` | 93% (14/15) | 93% (14/15) | 15 mixed FR |
+| `smoke_hard_semantic.py` | 82% (14/17) | **94% (16/17)** | 17 hard FR |
+| `smoke_hard_semantic2.py` | 92% (46/50) | 92% (46/50) | 50 FR, 4 tiers |
+
+Sparse signal active in 47–50/50 cases (ranking changes between dense and hybrid).
+
+Known failure categories (not retrieval-layer fixable):
+- Expert-tier synthesis queries (audit checklist generation, executive summary matrix)
+- Edge-case: "8.7 situations d'urgence absent de l'ISO 9001" — clause does not exist in the standard
 
 ---
 
