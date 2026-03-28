@@ -166,14 +166,17 @@ class EmbedderService:
         """
         Build the string that will be sent to the embedding model.
 
-        A structured prefix anchors the clause identity so that clauses
-        sharing normative vocabulary (shall, documented information, …)
-        produce distinct vectors in the embedding space.
+        The "search_document: " instruction prefix is required by nomic-embed-text
+        to route document vectors into the correct asymmetric retrieval subspace.
+        The corresponding query side must use "search_query: " (Task 8).
+        A structured clause identity prefix further anchors clauses sharing
+        normative vocabulary (shall, documented information, …) to distinct
+        vectors in the embedding space.
 
-        Format: "{norm_full} clause {clause_number} {clause_title}: {text}"
+        Format: "search_document: {norm_full} clause {clause_number} {clause_title}: {text}"
         """
         return (
-            f"{chunk.norm_full} clause {chunk.clause_number} "
+            f"search_document: {chunk.norm_full} clause {chunk.clause_number} "
             f"{chunk.clause_title}: {chunk.text}"
         )
 
