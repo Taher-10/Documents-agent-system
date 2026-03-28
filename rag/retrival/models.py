@@ -20,6 +20,8 @@ class TransformedQuery:
 
     language: str  # "EN" or "FR" — determines vocabulary and HyDE prompt language
 
+    norm_filter: List[str]  # raw norm IDs passed to transform(), preserved for diagnostics
+
 
 @dataclass
 class RetrievedChunk:

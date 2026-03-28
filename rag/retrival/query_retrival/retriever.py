@@ -251,7 +251,8 @@ class HybridRetriever:
         if not results:
             raise EmptyCorpusError(
                 f"No results from '{collection}'. "
-                f"language='{query.language}', query='{query.original_query[:80]}'. "
+                f"norm_filter={query.norm_filter}, language='{query.language}', "
+                f"query='{query.original_query[:80]}'. "
                 f"Possible causes: corpus not ingested, filter mismatch "
                 f"(check norm_id values in Qdrant payload), or 'sparse' named "
                 f"vector slot missing from collection."

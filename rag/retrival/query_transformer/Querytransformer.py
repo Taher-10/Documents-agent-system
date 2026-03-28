@@ -157,4 +157,5 @@ def transform(
         iso_vocab_hits=iso_vocab_hits,
         original_query=query_text,
         language=language,
+        norm_filter=norm_filter,
     )

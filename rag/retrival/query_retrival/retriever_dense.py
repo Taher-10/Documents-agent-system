@@ -198,10 +198,10 @@ class DenseRetriever:
         if not results:
             raise EmptyCorpusError(
                 f"No results from collection '{collection}'. "
-                f"Possible causes: (A) corpus not ingested, "
-                f"(B) filter mismatch — check norm_id values in Qdrant payload. "
-                f"Filter used: language='{query.language}', "
-                f"original_query='{query.original_query[:80]}'"
+                f"norm_filter={query.norm_filter}, language='{query.language}', "
+                f"query='{query.original_query[:80]}'. "
+                f"Possible causes: corpus not ingested, filter mismatch "
+                f"(check norm_id values in Qdrant payload)."
             )
 
         # Step 4 — map to RetrievedChunk
