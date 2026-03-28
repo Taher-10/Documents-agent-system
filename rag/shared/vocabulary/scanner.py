@@ -34,6 +34,19 @@ MODAL_TERMS: List[str] = [
     "can",
 ]
 
+# ── Surface-form pattern cache ────────────────────────────────────────────────
+# Compiled once per unique surface form (lazy init) to avoid recompiling
+# on every scan_iso_vocabulary() call.
+_FORM_PATTERNS: dict[str, re.Pattern] = {}
+
+
+def _form_pattern(form: str) -> re.Pattern:
+    """Return a compiled word-boundary regex for *form*, cached after first use."""
+    key = form.lower()
+    if key not in _FORM_PATTERNS:
+        _FORM_PATTERNS[key] = re.compile(r'\b' + re.escape(key) + r'\b')
+    return _FORM_PATTERNS[key]
+
 
 def scan_iso_vocabulary(
     text: str,
@@ -84,7 +97,7 @@ def scan_iso_vocabulary(
         if norm_filter and not any(s in entry["standards"] for s in norm_filter):
             continue
         for form in entry["forms"]:
-            if form.lower() in text_lower:
+            if _form_pattern(form).search(text_lower):
                 hits.add(canonical_key)
                 break  # first match wins; skip remaining surface forms
 
