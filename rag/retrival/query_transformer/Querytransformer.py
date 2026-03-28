@@ -2,20 +2,16 @@
 Querytransformer.py
 ===================
 Scans text for ISO management system vocabulary and augments BM25 token sets.
-Also provides the HyDE trigger decision gate, HyDE generation, and norm filter builder.
+Also provides the norm filter builder.
 
 Public API
 ----------
     transform(query_text, norm_filter, language)  -> TransformedQuery full pipeline entry point
     scan_iso_vocabulary(text, language)           -> List[str]       canonical hits + clause numbers
     augment_bm25_tokens(base, iso_hits)           -> List[str]       merged token set, no duplicates
-    should_use_hyde(text, language)               -> bool            True when HyDE should run
-    generate_hyde_text(text, norm_filter, lang)   -> Optional[str]   hypothetical ISO clause or None
     build_norm_filter(norm_filter, language)       -> Filter          Qdrant filter restricting to norms + language
 """
 
-import asyncio
-import os
 from typing import List, Optional, Set
 
 from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
@@ -56,243 +52,6 @@ def augment_bm25_tokens(base_tokens: List[str], iso_hits: List[str]) -> List[str
                 token_set.add(word)
 
     return list(token_set)
-
-
-# ---------------------------------------------------------------------------
-# HyDE decision gate
-# ---------------------------------------------------------------------------
-
-_HYDE_TOKEN_THRESHOLD = 150  # estimated tokens below which HyDE fires when no anchors found
-
-
-def should_use_hyde(
-    text: str, 
-    language: str = "EN", 
-    norm_filter: Optional[List[str]] = None,
-    min_vocab_terms: int = 2
-) -> bool:
-    """
-    Return True when HyDE should be applied to *text*.
-
-    Three signals decide whether the query has sufficient ISO signal strength
-    to embed directly without HyDE expansion:
-
-    1. **Clause number present** — a clause reference (e.g. "7.2", "8.5.1")
-       makes the query already specific. Skip HyDE.
-
-    2. **ISO vocabulary anchor** — `min_vocab_terms` or more canonical ISO term 
-       matches (excluding clause numbers and modal terms) means the dense 
-       encoder already has a strong anchor. Skip HyDE.
-
-    3. **Short text with no anchors** — estimated tokens < 150 AND zero
-       vocabulary matches → signal is too weak, trigger HyDE.
-
-    This avoids triggering HyDE for queries like "formation compétences"
-    where the terms are direct ISO vocabulary hits.
-    """
-    hits = scan_iso_vocabulary(text, language, norm_filter)
-    modal_set = set(MODAL_TERMS)
-
-    # Signal 1: clause number → already specific, skip HyDE
-    if any(CLAUSE_PATTERN.fullmatch(h) for h in hits):
-        return False
-
-    # Signal 2: min_vocab_terms+ ISO vocabulary match (non-clause, non-modal) → anchored, skip HyDE
-    vocab_hits = [h for h in hits if not CLAUSE_PATTERN.fullmatch(h) and h not in modal_set]
-    if len(vocab_hits) >= min_vocab_terms:
-        return False
-
-    # Signal 3: short text with zero vocabulary matches → trigger HyDE
-    estimated_tokens = len(text.split()) * 1.3
-    return estimated_tokens < _HYDE_TOKEN_THRESHOLD
-
-
-def _extract_hyde_context(
-    text: str,
-    language: str,
-    norm_filter: Optional[List[str]],
-) -> tuple[str, str]:
-    """
-    Pre-scan *text* to extract vocabulary anchors for the HyDE prompt.
-
-    Returns
-    -------
-    (keywords_str, clause_hint_str)
-        keywords_str    : top-5 ISO canonical vocabulary hits, comma-separated.
-                          Excludes clause numbers and modal terms.
-                          Empty string (not "None") when nothing qualifies.
-        clause_hint_str : first clause number found (e.g. "8.5"), or "".
-    """
-    hits = scan_iso_vocabulary(text, language, norm_filter)
-    modal_set = set(MODAL_TERMS)
-
-    clause_hint_str = ""
-    keyword_candidates: List[str] = []
-
-    for hit in hits:
-        if CLAUSE_PATTERN.fullmatch(hit):
-            if not clause_hint_str:          # first clause number wins
-                clause_hint_str = hit
-        elif hit in modal_set:
-            pass                             # discard — noise, not anchoring
-        else:
-            keyword_candidates.append(hit)
-
-    keywords_str = ", ".join(keyword_candidates[:5])
-    return keywords_str, clause_hint_str
-
-
-# ---------------------------------------------------------------------------
-# HyDE generation
-# ---------------------------------------------------------------------------
-
-# Prompt templates — version-controlled here, not inside the function.
-# Edit these strings to iterate on HyDE output quality.
-_HYDE_PROMPT_TEMPLATE = """\
-You are an expert in ISO management system standards.
-
-Task:
-Write a short ISO-style clause (2–4 sentences) consistent with the target standard.
-
-STRICT RULES:
-- DO NOT start with generic phrases like:
-  "The organization shall establish a process"
-  "The organization is required to implement a process"
-
-- Start directly with a SPECIFIC requirement, for example:
-  "The organization shall determine..."
-  "Top management shall ensure..."
-  "The organization shall monitor..."
-
-- Use the exact technical vocabulary of the target standard.
-  Do NOT generalize into vague management language.
-
-- If keywords are provided, you MUST reuse some of them.
-
-- If a clause hint is provided, stay within that clause domain.
-
-- Do NOT include clause numbers, titles, or explanations.
-- Output ONLY the clause text.
-
-Target standard(s):
-{standards}
-
-Topic:
-{text}
-
-Keywords (if any):
-{keywords}
-
-Clause hint (if any):
-{clause_hint}
-
-ISO clause:"""
-
-_HYDE_PROMPT_TEMPLATE_FR = """\
-Vous êtes un expert des normes ISO de systèmes de management.
-
-Tâche :
-Rédiger une clause ISO courte (2 à 4 phrases) cohérente avec le référentiel cible.
-
-RÈGLES STRICTES :
-- NE PAS commencer par des phrases génériques comme :
-  "L'organisme est tenu de mettre en place un processus"
-  "L'organisme doit établir un processus"
-
-- Commencer directement par une exigence SPÉCIFIQUE, par exemple :
-  "L'organisme doit déterminer..."
-  "La direction doit s'assurer..."
-  "L'organisme doit surveiller..."
-
-- Utiliser le vocabulaire technique EXACT du référentiel cible.
-  Ne pas généraliser en langage de management vague.
-
-- Si des mots-clés sont fournis, vous DEVEZ en réutiliser certains.
-
-- Si un indice de clause est fourni, rester dans ce domaine.
-
-- Ne pas inclure de numéro de clause, titre ou explication.
-- Produire UNIQUEMENT le texte de la clause.
-
-Référentiel(s) cible(s) :
-{standards}
-
-Texte opérationnel :
-{text}
-
-Mots-clés (si disponibles) :
-{keywords}
-
-Indice de clause (si disponible) :
-{clause_hint}
-
-Clause ISO :"""
-
-_HYDE_TIMEOUT: float = float(os.getenv("HYDE_TIMEOUT", "15.0"))  # 15s covers llama3.2:3b locally (~10 tok/s × 100 tok); cloud APIs are faster
-_HYDE_RETRIES: int = 3        # total attempts before giving up
-_HYDE_RETRY_SLEEP: float = 0.5  # seconds to wait between attempts
-
-
-async def generate_hyde_text(
-    text: str,
-    norm_filter: List[str],
-    language: str = "EN",
-    keywords: str = "",
-    clause_hint: str = "",
-) -> Optional[str]:
-    """
-    Generate a hypothetical ISO clause for the given operational text.
-
-    Calls the LLM client (provider selected by ``LLM_PROVIDER`` env var) with a
-    hard per-attempt timeout of 5 s and up to 2 total attempts.
-
-    Returns the generated clause text on success, or ``None`` if every attempt
-    fails (timeout, network error, empty response).  Failure is **silent and
-    non-fatal** — callers must fall back to the original text and set
-    ``hyde_used = False``.
-
-    Parameters
-    ----------
-    text:
-        The operational procedure text to transform into an ISO clause.
-    norm_filter:
-        List of norm IDs (e.g. ``["ISO9001"]``).  Used to target the prompt.
-        If empty, defaults to ``"ISO 9001"``.
-    language:
-        ``"EN"`` (default) or ``"FR"``.  Selects the prompt template so the
-        generated clause is in the same language as the query.
-    keywords:
-        Comma-separated ISO vocabulary hits from the pre-scan.
-        Empty string when none found. Injected into the prompt verbatim.
-    clause_hint:
-        Clause number (e.g. "8.5") extracted from the pre-scan.
-        Empty string when none found. Injected into the prompt verbatim.
-    """
-    from rag.retrival.clients.llm_client import chat_complete  # deferred — avoids hard dep at module level
-
-    standards = ", ".join(norm_filter) if norm_filter else "ISO 9001"
-    template = _HYDE_PROMPT_TEMPLATE if language == "EN" else _HYDE_PROMPT_TEMPLATE_FR
-    prompt = template.format(
-        standards=standards,
-        text=text,
-        keywords=keywords,
-        clause_hint=clause_hint,
-    )
-
-    for attempt in range(_HYDE_RETRIES):
-        try:
-            result = await asyncio.wait_for(
-                chat_complete(prompt, max_tokens=100),
-                timeout=_HYDE_TIMEOUT,
-            )
-            if result:
-                return result
-        except Exception:  # TimeoutError, ConnectionError, HTTP errors, etc.
-            pass
-        if attempt < _HYDE_RETRIES - 1:
-            await asyncio.sleep(_HYDE_RETRY_SLEEP)
-
-    return None
 
 
 # ---------------------------------------------------------------------------
@@ -344,35 +103,29 @@ def build_norm_filter(norm_filter: List[str], language: str = "EN") -> Filter:
 # Public entry point
 # ---------------------------------------------------------------------------
 
-async def transform(
-    query_text: str, 
-    norm_filter: List[str], 
+def transform(
+    query_text: str,
+    norm_filter: List[str],
     language: str = "EN",
-    min_vocab_terms: int = 3  # TEST: raised to force HyDE on almost all queries
 ) -> TransformedQuery:
     """
-    Full pipeline entry point — orchestrates all sub-systems.
+    Full pipeline entry point — orchestrates vocabulary scan and BM25 augmentation.
 
-    Ordered steps (HyDE runs *before* vocabulary scan so the generated
-    ISO-style text gets scanned, not the raw operational text):
-
+    Steps:
     1. Build the Qdrant norm filter (raises ``ValueError`` if empty).
-    2. Decide whether HyDE should run.
-    3. If HyDE triggered, pre-scan query for vocabulary anchors, then generate
-       hypothetical clause; fall back on failure.
-    4. Scan the (possibly HyDE-rewritten) text for ISO vocabulary.
-    5. Tokenise and augment BM25 tokens.
-    6. Return a ``TransformedQuery``.
+    2. Scan the query text for ISO vocabulary.
+    3. Tokenise and augment BM25 tokens.
+    4. Return a ``TransformedQuery``.
 
     Parameters
     ----------
     query_text:
-        Raw operational / user text to transform.
+        Raw user text to transform.
     norm_filter:
         Non-empty list of norm IDs (e.g. ``["ISO9001"]``).
     language:
         ``"EN"`` (default) or ``"FR"``.  Determines the ISO vocabulary used
-        for scanning, the HyDE prompt language, and the Qdrant language filter.
+        for scanning and the Qdrant language filter.
 
     Returns
     -------
@@ -381,57 +134,23 @@ async def transform(
     # 1. Norm filter (fast, raises on empty list)
     qdrant_filter = build_norm_filter(norm_filter, language)
 
-    # 2 + 3. HyDE
-    hyde_triggered = should_use_hyde(
-        query_text, 
-        language, 
-        norm_filter,
-        min_vocab_terms=min_vocab_terms
-    )
-    if hyde_triggered:
-        # Pre-scan the raw query for vocabulary anchors BEFORE calling the LLM.
-        # This anchors the HyDE prompt without polluting the post-HyDE vocab scan.
-        hyde_keywords, hyde_clause_hint = _extract_hyde_context(
-            query_text, language, norm_filter
-        )
-        hyde_text = await generate_hyde_text(
-            query_text,
-            norm_filter,
-            language,
-            keywords=hyde_keywords,
-            clause_hint=hyde_clause_hint,
-        )
-        if hyde_text:
-            embed_text = hyde_text
-            hyde_used = True
-        else:
-            embed_text = query_text
-            hyde_used = False
-    else:
-        embed_text = query_text
-        hyde_used = False
+    # 2. ISO vocabulary scan
+    iso_vocab_hits = scan_iso_vocabulary(query_text, language, norm_filter)
 
-    # 4. ISO vocabulary scan (on post-HyDE text, scoped to requested standards)
-    iso_vocab_hits = scan_iso_vocabulary(embed_text, language, norm_filter)
-
-    # 5. BM25 tokens
-    # Use the shared canonical tokenizer for word extraction (same _WORD_RE +
-    # stop-word filter as ingestion), then augment with ISO vocabulary hits.
-    clause_hit = CLAUSE_PATTERN.search(embed_text)
+    # 3. BM25 tokens
+    clause_hit = CLAUSE_PATTERN.search(query_text)
     base_tokens = tokenize_for_bm25(
-        text=embed_text,
+        text=query_text,
         clause_ref=clause_hit.group(0) if clause_hit else None,
     )
     bm25_tokens = augment_bm25_tokens(base_tokens, iso_vocab_hits)
 
-
-
-    # 6. Assemble result
+    # 4. Assemble result
     return TransformedQuery(
-        embed_text=embed_text,
+        embed_text=query_text,
         bm25_tokens=bm25_tokens,
         qdrant_filter=qdrant_filter,
-        hyde_used=hyde_used,
+        hyde_used=False,
         iso_vocab_hits=iso_vocab_hits,
         original_query=query_text,
         language=language,
