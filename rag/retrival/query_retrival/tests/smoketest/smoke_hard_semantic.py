@@ -393,7 +393,7 @@ async def run_tests(
         tq: Optional[TransformedQuery] = None
         transform_error: Optional[str] = None
         try:
-            tq = await transform(tc.query, norm_filter=NORM_FILTER, language=LANGUAGE)
+            tq = transform(tc.query, norm_filter=NORM_FILTER, language=LANGUAGE)
         except Exception as exc:
             transform_error = f"{type(exc).__name__}: {exc}"
             results.append(CompareResult(
