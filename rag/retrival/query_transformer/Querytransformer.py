@@ -12,7 +12,7 @@ Public API
     build_norm_filter(norm_filter, language)       -> Filter          Qdrant filter restricting to norms + language
 """
 
-from typing import List, Optional, Set
+from typing import List, Set
 
 from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
 
@@ -20,7 +20,6 @@ from rag.retrival.models import TransformedQuery
 from rag.shared.bm25.tokenizer import tokenize_for_bm25
 from rag.shared.vocabulary.scanner import (
     CLAUSE_PATTERN,
-    MODAL_TERMS,
     scan_iso_vocabulary,
 )
 
