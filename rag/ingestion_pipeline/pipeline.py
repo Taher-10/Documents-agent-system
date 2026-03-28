@@ -57,7 +57,7 @@ from rag.ingestion_pipeline.pdf_parser.document import ParsedDocument
 
 from rag.ingestion_pipeline.chunker import NormChunk, assemble_norm_chunks
 from rag.ingestion_pipeline.enricher import Enricher
-from rag.ingestion_pipeline.registry import validate_chunks, write_registry
+from rag.ingestion_pipeline.registry import validate_chunks, write_registry,write_normid_clause_bm25_registry,write_normid_clause_keywords_registry
 from rag.ingestion_pipeline.segmenter import (
     STANDARD_ID_MAP,
     ClauseNode,
@@ -184,6 +184,8 @@ def segment(
     # Phase 6b — persist registry JSON + latest-pointer
     registry_path = write_registry(result, output_dir=output_dir)
     print(f"[Registry] Written → {registry_path}")
+    write_normid_clause_keywords_registry(result, output_dir=output_dir)
+    write_normid_clause_bm25_registry(result, output_dir=output_dir)
 
     return result
 

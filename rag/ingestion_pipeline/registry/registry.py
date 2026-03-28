@@ -217,6 +217,11 @@ def _chunk_to_registry_dict(chunk: NormChunk) -> dict:
     }
 
 
+
+
+    
+
+
 # ==============================================================================
 # Phase 6b — Registry writer
 # ==============================================================================
@@ -287,4 +292,168 @@ def write_registry(result, output_dir: str = "output") -> str:
     with open(latest_path, 'w', encoding='utf-8') as fh:
         fh.write(filename + '\n')
 
+    return filepath
+
+
+
+def write_normid_clause_keywords_registry(result, output_dir: str = "output") -> str:
+    """
+    Write a specialized registry containing only norm_id, clause_number, and keywords.
+    
+    This registry focuses on the relationship between norms, their clause structure,
+    and extracted keywords for lightweight analysis and quick lookup.
+    
+    File naming
+    -----------
+    Each run produces a unique file:
+      {output_dir}/{norm_slug}_keywords_registry_{YYYYMMDDTHHMMSS}.json
+    e.g. output/iso90012015_keywords_registry_20260318T154300.json
+    
+    Registry JSON structure
+    -----------------------
+    {
+      "standard_id":  "ISO 9001:2015",
+      "generated_at": "2026-03-18T15:43:00.123456",
+      "chunk_count":  95,
+      "entries": [
+        {
+          "norm_id": "ISO 9001:2015",
+          "clause_number": "4.1",
+          "keywords": ["context", "organization", "understanding"]
+        },
+        ...
+      ]
+    }
+    
+    Parameters
+    ----------
+    result     : SegmenterResult (duck-typed: must have .standard_id, .chunks).
+    output_dir : Target directory (created if absent).
+    
+    Returns
+    -------
+    str — absolute path to the written registry file.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # "ISO 9001:2015" → "iso90012015"  (remove non-alphanumeric, lowercase)
+    norm_slug = re.sub(r'[^a-z0-9]', '', result.standard_id.lower())
+    
+    ts       = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+    filename = f"{norm_slug}_keywords_registry_{ts}.json"
+    filepath = os.path.join(output_dir, filename)
+    
+    # Build entries list
+    entries = []
+    for chunk in result.chunks:
+        entries.append({
+            "norm_id": chunk.norm_full,  # Full norm identifier
+            "clause_number": chunk.clause_number,
+            "keywords": chunk.keywords if chunk.keywords else []
+        })
+    
+    registry = {
+        "standard_id": result.standard_id,
+        "generated_at": datetime.datetime.now().isoformat(),
+        "chunk_count": len(entries),
+        "entries": entries
+    }
+    
+    # Consistency gate
+    assert registry["chunk_count"] == len(registry["entries"]), (
+        f"chunk_count={registry['chunk_count']} != "
+        f"len(entries)={len(registry['entries'])}"
+    )
+    
+    with open(filepath, 'w', encoding='utf-8') as fh:
+        _json.dump(registry, fh, ensure_ascii=False, indent=2)
+    
+    # Update the stable latest-pointer for keywords registry
+    latest_path = os.path.join(output_dir, f"{norm_slug}_keywords_registry_latest.txt")
+    with open(latest_path, 'w', encoding='utf-8') as fh:
+        fh.write(filename + '\n')
+    
+    return filepath
+
+
+def write_normid_clause_bm25_registry(result, output_dir: str = "output") -> str:
+    """
+    Write a specialized registry containing norm_id, clause_number, and BM25 tokens.
+    
+    This registry focuses on BM25 tokenization data for retrieval-augmented
+    generation (RAG) systems, providing token-level search capabilities.
+    
+    File naming
+    -----------
+    Each run produces a unique file:
+      {output_dir}/{norm_slug}_bm25_registry_{YYYYMMDDTHHMMSS}.json
+    e.g. output/iso90012015_bm25_registry_20260318T154300.json
+    
+    Registry JSON structure
+    -----------------------
+    {
+      "standard_id":  "ISO 9001:2015",
+      "generated_at": "2026-03-18T15:43:00.123456",
+      "chunk_count":  95,
+      "entries": [
+        {
+          "norm_id": "ISO 9001:2015",
+          "clause_number": "4.1",
+          "bm25_tokens": ["context", "organization", "understand", "requirement"],
+          "token_count": 4
+        },
+        ...
+      ]
+    }
+    
+    Parameters
+    ----------
+    result     : SegmenterResult (duck-typed: must have .standard_id, .chunks).
+    output_dir : Target directory (created if absent).
+    
+    Returns
+    -------
+    str — absolute path to the written registry file.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # "ISO 9001:2015" → "iso90012015"  (remove non-alphanumeric, lowercase)
+    norm_slug = re.sub(r'[^a-z0-9]', '', result.standard_id.lower())
+    
+    ts       = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+    filename = f"{norm_slug}_bm25_registry_{ts}.json"
+    filepath = os.path.join(output_dir, filename)
+    
+    # Build entries list
+    entries = []
+    for chunk in result.chunks:
+        bm25_tokens = chunk.bm25_tokens if chunk.bm25_tokens else []
+        entries.append({
+            "norm_id": chunk.norm_full,  # Full norm identifier
+            "clause_number": chunk.clause_number,
+            "bm25_tokens": bm25_tokens,
+            "token_count": len(bm25_tokens)
+        })
+    
+    registry = {
+        "standard_id": result.standard_id,
+        "generated_at": datetime.datetime.now().isoformat(),
+        "chunk_count": len(entries),
+        "entries": entries
+    }
+    
+    # Consistency gate
+    assert registry["chunk_count"] == len(registry["entries"]), (
+        f"chunk_count={registry['chunk_count']} != "
+        f"len(entries)={len(registry['entries'])}"
+    )
+    
+    with open(filepath, 'w', encoding='utf-8') as fh:
+        _json.dump(registry, fh, ensure_ascii=False, indent=2)
+    
+    # Update the stable latest-pointer for BM25 registry
+    latest_path = os.path.join(output_dir, f"{norm_slug}_bm25_registry_latest.txt")
+    with open(latest_path, 'w', encoding='utf-8') as fh:
+        fh.write(filename + '\n')
+    
     return filepath

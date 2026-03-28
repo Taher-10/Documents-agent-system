@@ -19,7 +19,9 @@ EMBEDDING_ENABLED=true python run.py
 
 # Run tests
 pytest rag/retrival/query_retrival/tests/test_sparse_encoder_query.py
-pytest rag/retrival/query_retrival/tests/smoketest/smoke_hybrid.py
+
+# Smoke test: dense-only vs hybrid comparison (15 ISO 9001 FR queries)
+python rag/retrival/query_retrival/tests/smoketest/smoke_compare.py
 
 # Qdrant connection test
 python rag/retrival/clients/vectorDbtest.py
@@ -65,11 +67,13 @@ PDF → ParsedDocument → List[ClauseSpan] → ClauseNode → List[NormChunk]
 ### Retrieval Pipeline (`rag/retrival/`)
 
 ```
-raw_query → QueryTransformer → TransformedQuery → HybridRetriever → List[RetrievedChunk]
+raw_query → QueryTransformer → TransformedQuery → DenseRetriever | HybridRetriever → List[RetrievedChunk]
 ```
 
 - **QueryTransformer**: HyDE (generates ISO-clause-like hypothetical text) + ISO vocabulary injection + Qdrant filter construction. HyDE has a 5-second timeout with raw-text fallback.
-- **HybridRetriever**: Qdrant RRF-ranked fusion of dense + sparse vectors.
+- **DenseRetriever** (`retriever_dense.py`): Dense-only cosine similarity search via `qdrant.query_points(using="dense")`. Score convention: `rrf_score = cosine`, `dense_score = sparse_score = -1.0` sentinels. Step 3 in the development sequence.
+- **HybridRetriever** (`retriever.py`): Dense + sparse (BM25) + Qdrant RRF fusion using Prefetch + `FusionQuery(Fusion.RRF)`. Sparse Prefetch is omitted when `bm25_tokens` is empty. `DenseRetriever` is kept as a backward-compat alias. Step 4 in the development sequence.
+- **Shared BM25 encoder** (`rag/shared/bm25/bm25_encoder.py`): `BM25SparseEncoder.encode_query()` is used by both the ingestion enricher and the retrieval pipeline for consistent tokenisation.
 
 ### Key Data Models
 

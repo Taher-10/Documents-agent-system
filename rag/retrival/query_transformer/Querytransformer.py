@@ -131,7 +131,7 @@ def should_use_hyde(
     text: str, 
     language: str = "EN", 
     norm_filter: Optional[List[str]] = None,
-    min_vocab_terms: int = 2
+    min_vocab_terms: int = 4
 ) -> bool:
     """
     Return True when HyDE should be applied to *text*.
