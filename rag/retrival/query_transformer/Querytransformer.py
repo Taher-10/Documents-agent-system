@@ -145,8 +145,12 @@ def transform(
     bm25_tokens = augment_bm25_tokens(base_tokens, iso_vocab_hits)
 
     # 4. Assemble result
+    # "search_query:" instruction prefix required by nomic-embed-text to route
+    # query vectors into the correct retrieval subspace.
+    # Must be paired with "search_document:" at ingestion time (embedder.py).
+    embed_text = f"search_query: {query_text}"
     return TransformedQuery(
-        embed_text=query_text,
+        embed_text=embed_text,
         bm25_tokens=bm25_tokens,
         qdrant_filter=qdrant_filter,
         hyde_used=False,

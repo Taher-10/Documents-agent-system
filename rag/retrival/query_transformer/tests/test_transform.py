@@ -6,7 +6,7 @@ Unit tests for QueryTransformer.transform().
 Verifies:
 1. transform() is synchronous (not a coroutine)
 2. hyde_used is always False
-3. embed_text equals the input query (Stage 1 — no prefix yet)
+3. embed_text is prefixed with 'search_query: ' (Stage 2 — nomic-embed-text)
 4. bm25_tokens are non-empty for ISO-vocabulary queries
 5. qdrant_filter is constructed (non-None)
 6. iso_vocab_hits contains expected canonical terms
@@ -61,17 +61,26 @@ class TestTransformHydeAlwaysFalse(unittest.TestCase):
 
 
 class TestTransformEmbedText(unittest.TestCase):
-    """embed_text must equal the input query (Stage 1 — no prefix yet)."""
+    """embed_text must be prefixed with 'search_query: '."""
 
-    def test_embed_text_equals_input(self):
+    def test_embed_text_has_search_query_prefix(self):
         query = "audit interne planifié"
         tq = transform(query, norm_filter=["ISO9001"], language="FR")
-        self.assertEqual(tq.embed_text, query)
+        self.assertTrue(
+            tq.embed_text.startswith("search_query: "),
+            f"Expected 'search_query: ' prefix, got: {tq.embed_text!r}",
+        )
 
-    def test_original_query_preserved(self):
+    def test_embed_text_contains_original_query(self):
+        query = "audit interne planifié"
+        tq = transform(query, norm_filter=["ISO9001"], language="FR")
+        self.assertIn(query, tq.embed_text)
+
+    def test_original_query_preserved_without_prefix(self):
         query = "revue de direction"
         tq = transform(query, norm_filter=["ISO9001"], language="FR")
         self.assertEqual(tq.original_query, query)
+        self.assertNotIn("search_query", tq.original_query)
 
 
 class TestTransformBm25Tokens(unittest.TestCase):
