@@ -132,6 +132,8 @@ grep -r "await transform" rag/
 
 Every hit must be updated. This is a breaking API change.
 
+**Enforcement rule:** Run this grep twice — once before merging Stage 1, once after. The failure mode is deceptive: the code runs fine at import time, passes linting, and only breaks at runtime when a query is processed. If smoke tests produce unexpected errors (not wrong results) after Stage 1, a missed `await` is the first thing to check.
+
 ---
 
 ## Stage 2 — Embedding Prefix Migration (requires re-ingestion)
