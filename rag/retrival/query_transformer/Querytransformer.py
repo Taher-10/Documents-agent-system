@@ -16,79 +16,17 @@ Public API
 
 import asyncio
 import os
-import re
 from typing import List, Optional, Set
 
 from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
 
 from rag.retrival.models import TransformedQuery
 from rag.shared.bm25.tokenizer import tokenize_for_bm25
-
-from .vocabulary import ISO_VOCABULARY_EN, ISO_VOCABULARY_FR
-
-# Matches clause numbers like "8.5", "7.4.1", "4.3.2.1"
-CLAUSE_PATTERN = re.compile(r'\b\d+\.\d+(?:\.\d+)*\b')
-
-# Modal / normative-weight terms (category 3)
-MODAL_TERMS: List[str] = [
-    "shall",
-    "must",
-    "is required to",
-    "should",
-    "it is recommended",
-    "may",
-    "is permitted",
-    "can",
-]
-
-
-def scan_iso_vocabulary(
-    text: str, language: str = "EN", norm_filter: Optional[List[str]] = None
-) -> List[str]:
-    """
-    Scan *text* for ISO vocabulary hits.
-
-    Only the vocabulary for *language* is consulted (
-    ``"EN"`` → ``ISO_VOCABULARY_EN``,
-    ``"FR"`` → ``ISO_VOCABULARY_FR``), avoiding cross-language false positives.
-
-    When *norm_filter* is provided, only terms tagged for one of those standards
-    are considered — e.g. passing ``["ISO9001"]`` suppresses
-    ``"système de management environnemental"`` (ISO14001-only) entirely,
-    eliminating false-positive BM25 token injection.
-
-    When any surface form matches, the **canonical key** is recorded (one entry
-    per canonical term, regardless of how many surface forms matched).
-    Also records any clause-number patterns and modal terms found.
-
-    Returns a sorted list — suitable for direct assignment to
-    ``TransformedQuery.iso_vocab_hits`` and for the HyDE trigger check
-    (len < 3 → trigger HyDE).
-    """
-    text_lower = text.lower()
-    hits: Set[str] = set()
-
-    # --- ISO vocabulary (language-specific, standard-scoped) ---
-    vocab = ISO_VOCABULARY_EN if language == "EN" else ISO_VOCABULARY_FR
-    for canonical_key, entry in vocab.items():
-        # Skip terms that don't belong to any requested standard
-        if norm_filter and not any(s in entry["standards"] for s in norm_filter):
-            continue
-        for form in entry["forms"]:
-            if form.lower() in text_lower:
-                hits.add(canonical_key)
-                break  # first match wins; skip remaining surface forms
-
-    # --- Modal / normative-weight terms ---
-    for term in MODAL_TERMS:
-        if term in text_lower:
-            hits.add(term)
-
-    # --- Clause number patterns ---
-    for clause_num in CLAUSE_PATTERN.findall(text):
-        hits.add(clause_num)
-
-    return sorted(hits)
+from rag.shared.vocabulary.scanner import (
+    CLAUSE_PATTERN,
+    MODAL_TERMS,
+    scan_iso_vocabulary,
+)
 
 
 def augment_bm25_tokens(base_tokens: List[str], iso_hits: List[str]) -> List[str]:
@@ -124,14 +62,14 @@ def augment_bm25_tokens(base_tokens: List[str], iso_hits: List[str]) -> List[str
 # HyDE decision gate
 # ---------------------------------------------------------------------------
 
-_HYDE_TOKEN_THRESHOLD = 150   # estimated tokens below which HyDE fires when no anchors found
+_HYDE_TOKEN_THRESHOLD = 150  # estimated tokens below which HyDE fires when no anchors found
 
 
 def should_use_hyde(
     text: str, 
     language: str = "EN", 
     norm_filter: Optional[List[str]] = None,
-    min_vocab_terms: int = 4
+    min_vocab_terms: int = 2
 ) -> bool:
     """
     Return True when HyDE should be applied to *text*.
@@ -410,7 +348,7 @@ async def transform(
     query_text: str, 
     norm_filter: List[str], 
     language: str = "EN",
-    min_vocab_terms: int = 1
+    min_vocab_terms: int = 3  # TEST: raised to force HyDE on almost all queries
 ) -> TransformedQuery:
     """
     Full pipeline entry point — orchestrates all sub-systems.
@@ -485,6 +423,8 @@ async def transform(
         clause_ref=clause_hit.group(0) if clause_hit else None,
     )
     bm25_tokens = augment_bm25_tokens(base_tokens, iso_vocab_hits)
+
+
 
     # 6. Assemble result
     return TransformedQuery(

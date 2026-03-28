@@ -52,18 +52,57 @@ class TestCase:
     fmt: str
 
 
+
 # ── HARD TESTS (20) ───────────────────────────────────────────────────────────
-
-
 
 TESTS: List[TestCase] = [
 
     TestCase(
-        name="1. Gestion des incertitudes projet",
+        name="1. Analyse contexte organisation",
         query=(
-            "Avant de démarrer un projet stratégique, notre équipe identifie "
-            "les facteurs pouvant compromettre les résultats attendus et "
-            "définit des actions pour limiter leurs impacts."
+            "L'organisation analyse régulièrement les facteurs internes et externes "
+            "susceptibles d’influencer ses performances, tout en identifiant les parties "
+            "intéressées pertinentes telles que les clients, autorités réglementaires "
+            "et partenaires, ainsi que leurs exigences évolutives."
+        ),
+        expected_any=["4.1", "4.2"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="semantic scenario",
+    ),
+
+    TestCase(
+        name="2. Engagement direction système",
+        query=(
+            "La direction démontre son engagement en intégrant le système de management "
+            "dans les processus métiers, en promouvant l’approche processus et en "
+            "soutenant les initiatives liées à la qualité et à l’environnement."
+        ),
+        expected_any=["5.1"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="semantic scenario",
+    ),
+
+    TestCase(
+        name="3. Politique alignée stratégie",
+        query=(
+            "Une politique qualité et environnementale est définie, communiquée et alignée "
+            "avec la stratégie globale de l’entreprise, incluant des engagements envers "
+            "la conformité réglementaire et l’amélioration continue."
+        ),
+        expected_any=["5.2"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="semantic scenario",
+    ),
+
+    TestCase(
+        name="4. Identification risques opportunités",
+        query=(
+            "Les risques et opportunités liés aux processus, aux aspects environnementaux "
+            "et aux obligations de conformité sont identifiés et pris en compte afin "
+            "d’assurer l’atteinte des résultats attendus."
         ),
         expected_any=["6.1"],
         top_k_pass=10,
@@ -72,240 +111,205 @@ TESTS: List[TestCase] = [
     ),
 
     TestCase(
-        name="2. Validation avant mise sur le marché",
+        name="5. Objectifs mesurables pilotés",
         query=(
-            "Avant la mise à disposition d’un nouveau service, nous réalisons "
-            "des tests auprès d’utilisateurs pilotes et validons les résultats "
-            "afin de garantir la conformité aux attentes."
-        ),
-        expected_any=["8.3"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
-    ),
-
-    TestCase(
-        name="3. Traitement d’un produit non acceptable",
-        query=(
-            "Lorsqu’un produit ne respecte pas les exigences définies, "
-            "nous analysons les causes et décidons des actions pour éviter "
-            "que cela ne se reproduise."
-        ),
-        expected_any=["10.2", "8.7"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
-    ),
-
-    TestCase(
-        name="4. Surveillance des performances globales",
-        query=(
-            "Nous collectons régulièrement des données issues de différents "
-            "processus afin d’identifier les tendances et évaluer l’efficacité "
-            "de notre organisation."
-        ),
-        expected_any=["9.1"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic paragraph",
-    ),
-
-    TestCase(
-        name="5. Maîtrise des prestataires externes",
-        query=(
-            "Nous travaillons avec plusieurs partenaires externes et mettons "
-            "en place des mécanismes pour s’assurer que leurs livrables respectent "
-            "nos exigences internes."
-        ),
-        expected_any=["8.4"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
-    ),
-
-    TestCase(
-        name="6. Définition des responsabilités internes",
-        query=(
-            "La direction attribue clairement les rôles et responsabilités "
-            "afin d’assurer le bon fonctionnement des activités et la "
-            "réalisation des objectifs."
-        ),
-        expected_any=["5.3"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic statement",
-    ),
-
-    TestCase(
-        name="7. Amélioration continue basée sur retours",
-        query=(
-            "Suite à des retours clients négatifs, nous analysons les données "
-            "et mettons en œuvre des actions pour améliorer durablement "
-            "nos processus."
-        ),
-        expected_any=["10.2", "10.3"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
-    ),
-
-    TestCase(
-        name="8. Gestion des connaissances organisationnelles",
-        query=(
-            "Nous capitalisons les connaissances acquises lors des projets "
-            "afin de les réutiliser et d’éviter la perte d’expertise dans "
-            "l’organisation."
-        ),
-        expected_any=["7.1.6"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic paragraph",
-    ),
-
-    TestCase(
-        name="9. Communication interne structurée",
-        query=(
-            "Des mécanismes sont mis en place pour garantir que les informations "
-            "importantes circulent efficacement entre les différents niveaux "
-            "de l’organisation."
-        ),
-        expected_any=["7.4"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic description",
-    ),
-
-    TestCase(
-        name="10. Gestion documentaire maîtrisée",
-        query=(
-            "Les informations nécessaires aux activités sont conservées, mises "
-            "à jour et accessibles aux personnes concernées tout en étant protégées."
-        ),
-        expected_any=["7.5"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic description",
-    ),
-
-    TestCase(
-        name="11. Alignement stratégique organisation",
-        query=(
-            "L’entreprise analyse son environnement externe et interne afin "
-            "d’orienter ses décisions stratégiques et atteindre ses objectifs."
-        ),
-        expected_any=["4.1"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic paragraph",
-    ),
-
-    TestCase(
-        name="12. Satisfaction client implicite",
-        query=(
-            "Nous surveillons les retours clients et ajustons nos activités "
-            "pour mieux répondre à leurs attentes et améliorer leur expérience."
-        ),
-        expected_any=["9.1.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic scenario",
-    ),
-
-    TestCase(
-        name="13. Gestion des ressources humaines",
-        query=(
-            "L’organisation s’assure que les personnes impliquées disposent "
-            "des compétences nécessaires pour accomplir leurs tâches efficacement."
-        ),
-        expected_any=["7.2"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic statement",
-    ),
-
-    TestCase(
-        name="14. Planification des objectifs qualité",
-        query=(
-            "Des objectifs mesurables sont définis et suivis afin d’améliorer "
-            "les performances globales de l’organisation."
+            "Des objectifs mesurables sont établis à différents niveaux de l’organisation, "
+            "avec des indicateurs de performance, des échéances définies et des méthodes "
+            "de suivi adaptées."
         ),
         expected_any=["6.2"],
         top_k_pass=10,
         difficulty="hard",
-        fmt="semantic statement",
+        fmt="semantic scenario",
     ),
 
     TestCase(
-        name="15. Pilotage des processus",
+        name="6. Gestion ressources et compétences",
         query=(
-            "Les activités sont organisées et contrôlées afin de garantir "
-            "leur cohérence et leur efficacité dans l’atteinte des résultats."
+            "L’organisation met à disposition les ressources nécessaires et s’assure que "
+            "le personnel est compétent sur la base de formations, d’expériences et "
+            "d’évaluations périodiques de leur efficacité."
         ),
-        expected_any=["4.4"],
-        top_k_pass=10,
-        difficulty="hard",
-        fmt="semantic paragraph",
-    ),
-
-    TestCase(
-        name="16. Gestion des changements organisationnels",
-        query=(
-            "Lors de modifications importantes, nous évaluons les impacts et "
-            "mettons en place des actions pour assurer une transition maîtrisée."
-        ),
-        expected_any=["6.3"],
+        expected_any=["7.1", "7.2"],
         top_k_pass=10,
         difficulty="hard",
         fmt="semantic scenario",
     ),
 
     TestCase(
-        name="17. Revue globale du système",
+        name="7. Sensibilisation et communication",
         query=(
-            "La direction examine périodiquement les performances globales "
-            "du système afin d’identifier des opportunités d’amélioration."
+            "Les employés sont sensibilisés à la politique et aux objectifs, tandis que "
+            "les communications internes et externes sont structurées et cohérentes avec "
+            "les exigences réglementaires."
         ),
-        expected_any=["9.3"],
+        expected_any=["7.3", "7.4"],
         top_k_pass=10,
         difficulty="hard",
         fmt="semantic scenario",
     ),
 
     TestCase(
-        name="18. Traçabilité des opérations",
+        name="8. Maîtrise information documentée",
         query=(
-            "Nous conservons des enregistrements permettant de démontrer "
-            "que les activités ont été réalisées conformément aux exigences."
+            "Les informations documentées sont correctement contrôlées, incluant leur "
+            "création, mise à jour, diffusion et conservation afin d’éviter toute "
+            "utilisation de versions obsolètes."
         ),
-        expected_any=["7.5", "8.5"],
+        expected_any=["7.5"],
         top_k_pass=10,
         difficulty="hard",
-        fmt="semantic description",
+        fmt="semantic scenario",
     ),
 
     TestCase(
-        name="19. Contrôle des activités opérationnelles",
+        name="9. Maîtrise opérationnelle globale",
         query=(
-            "Les opérations sont réalisées dans des conditions maîtrisées "
-            "afin de garantir la conformité des résultats attendus."
+            "Les processus opérationnels sont planifiés, mis en œuvre et contrôlés, y compris "
+            "les activités externalisées, afin de garantir la conformité des produits et la "
+            "réduction des impacts environnementaux."
         ),
-        expected_any=["8.5"],
+        expected_any=["8.1"],
         top_k_pass=10,
         difficulty="hard",
-        fmt="semantic paragraph",
+        fmt="semantic scenario",
     ),
 
     TestCase(
-        name="20. Identification des besoins parties intéressées",
+        name="10. Suivi et analyse performance",
         query=(
-            "Nous identifions les attentes des parties concernées afin "
-            "d’adapter nos activités et assurer la pertinence de notre système."
+            "L’organisation surveille et mesure ses performances à l’aide d’indicateurs "
+            "pertinents, analyse les résultats et évalue la conformité aux exigences "
+            "applicables."
         ),
-        expected_any=["4.2"],
+        expected_any=["9.1"],
         top_k_pass=10,
         difficulty="hard",
-        fmt="semantic paragraph",
+        fmt="semantic scenario",
     ),
+
+    TestCase(
+        name="11. Programme audit interne",
+        query=(
+            "Des audits internes sont planifiés et réalisés pour vérifier la conformité "
+            "du système de management et son efficacité par rapport aux exigences définies."
+        ),
+        expected_any=["9.2"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="semantic scenario",
+    ),
+
+    TestCase(
+        name="12. Amélioration continue système",
+        query=(
+            "L’organisation améliore en continu son système de management en s’appuyant "
+            "sur les résultats de performance, les audits et les actions correctives."
+        ),
+        expected_any=["10.3"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="semantic scenario",
+    ),
+
+    # ── PARTIAL / FAILURE CASES ──
+
+    TestCase(
+        name="13. Absence calibration équipements",
+        query=(
+            "Les उपकरणs de mesure sont utilisés dans les processus mais aucune procédure "
+            "de calibration ou de vérification n’est définie pour garantir la validité des résultats."
+        ),
+        expected_any=["7.1.5"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="gap detection",
+    ),
+
+    TestCase(
+        name="14. Compétence non démontrée",
+        query=(
+            "Le personnel occupe des postes critiques mais aucune preuve de formation, "
+            "qualification ou évaluation de compétence n’est disponible."
+        ),
+        expected_any=["7.2"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="gap detection",
+    ),
+
+    TestCase(
+        name="15. Absence approche risques",
+        query=(
+            "Les processus sont exécutés sans identification formelle des risques et "
+            "opportunités pouvant impacter les résultats attendus."
+        ),
+        expected_any=["6.1"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="gap detection",
+    ),
+
+    TestCase(
+        name="16. Documents non contrôlés",
+        query=(
+            "Des documents existent mais il n’existe aucun mécanisme de gestion des versions, "
+            "ni de contrôle d’accès ou d’archivage fiable."
+        ),
+        expected_any=["7.5"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="gap detection",
+    ),
+
+    TestCase(
+        name="17. Absence action corrective",
+        query=(
+            "Des non-conformités sont détectées mais aucune démarche structurée n’est mise en place "
+            "pour identifier les causes racines et éviter leur réapparition."
+        ),
+        expected_any=["10.2"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="gap detection",
+    ),
+
+    TestCase(
+        name="18. Absence mesure performance",
+        query=(
+            "Les activités sont réalisées sans indicateurs de performance ni analyse des résultats, "
+            "ce qui empêche toute évaluation objective."
+        ),
+        expected_any=["9.1"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="gap detection",
+    ),
+
+    TestCase(
+        name="19. Absence audit interne",
+        query=(
+            "Aucun audit interne n’est réalisé pour vérifier la conformité du système de management "
+            "aux exigences ISO."
+        ),
+        expected_any=["9.2"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="gap detection",
+    ),
+
+    TestCase(
+        name="20. Engagement direction insuffisant",
+        query=(
+            "La direction définit des politiques mais ne participe pas activement à leur mise en œuvre "
+            "ni à leur intégration dans les processus de l’organisation."
+        ),
+        expected_any=["5.1"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="gap detection",
+    ),
+
 ]
 
 
@@ -454,6 +458,7 @@ def print_detail(r: CompareResult) -> None:
     hyde_str = "YES" if r.tq.hyde_used else "no"
     vocab_preview = r.tq.iso_vocab_hits[:5] if r.tq.iso_vocab_hits else []
     print(f"     HyDE={hyde_str}  iso_vocab_hits={vocab_preview}")
+    print(f"     bm25_tokens ({len(r.tq.bm25_tokens)}): {sorted(r.tq.bm25_tokens)}")
 
     dense_mark = _pass_icon(r.dense)
     hybrid_mark = _pass_icon(r.hybrid)

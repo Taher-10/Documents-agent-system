@@ -6,20 +6,26 @@ Phase 5 — Retrieval Metadata Enrichment
 Adds two retrieval-focused fields to every NormChunk:
 
   keywords    — top-5 TF-IDF terms per chunk (bigrams preferred on tie).
-  bm25_tokens — combined word / clause-digit / keyword tokens for local BM25.
+  bm25_tokens — combined word / clause-digit / keyword / vocabulary tokens for BM25.
 
-Design constraint (preserved from the original monolith):
-  This module imports ONLY the NormChunk dataclass from chunker.models and
-  the standard library.  No segmenter, registry, or other pipeline packages
-  are imported here.  This keeps the enricher self-contained and replaceable.
+Design note:
+  This module imports NormChunk from chunker.models, the shared BM25 tokenizer,
+  and the shared ISO vocabulary scanner from rag.shared.  The shared packages are
+  pipeline-infrastructure, not pipeline-internal, so this does not violate the
+  one-directional dependency rule.
+
+  The vocabulary scanner (scan_iso_vocabulary) is applied symmetrically here and
+  in the query transformer, ensuring that any ISO surface form that appears in a
+  chunk is indexed with the same canonical key that a query would inject — which
+  guarantees BM25 sparse-match for all vocabulary terms regardless of surface form.
 
 The Enricher is stateful (it pre-computes corpus-level IDF at construction
 time) but has no side effects beyond mutating the chunks it is given.
 
 Usage
 -----
-  enricher = Enricher(chunks)   # computes IDF across the corpus
-  enricher.enrich(chunks)       # mutates chunks in-place, returns same list
+  enricher = Enricher(chunks, language="EN")   # computes IDF across the corpus
+  enricher.enrich(chunks)                       # mutates chunks in-place
 """
 
 import math
@@ -28,6 +34,7 @@ from typing import Dict, List
 
 from rag.ingestion_pipeline.chunker.models import NormChunk
 from rag.shared.bm25.tokenizer import tokenize_for_bm25
+from rag.shared.vocabulary.scanner import scan_iso_vocabulary
 
 
 # ==============================================================================
@@ -130,12 +137,16 @@ class Enricher:
 
     Parameters
     ----------
-    chunks : Full list of NormChunks to enrich (used to compute corpus IDF).
+    chunks   : Full list of NormChunks to enrich (used to compute corpus IDF).
+    language : Language of the document being processed (``"EN"`` or ``"FR"``).
+               Used to select the correct ISO vocabulary for BM25 token injection.
+               Defaults to ``"EN"``.
     """
 
-    def __init__(self, chunks: List[NormChunk]):
+    def __init__(self, chunks: List[NormChunk], language: str = "EN"):
         # Pre-compute corpus-level IDF at construction time
         self._idf: Dict[str, float] = self._compute_idf(chunks)
+        self._language: str = language
 
     # ── Private helpers ───────────────────────────────────────────────────────
 
@@ -204,13 +215,20 @@ class Enricher:
         )
         return [t for t, _ in ranked[:5]]
 
-    @staticmethod
-    def _bm25_tokens(chunk: NormChunk) -> List[str]:
+    def _bm25_tokens(self, chunk: NormChunk) -> List[str]:
         """
         Build the BM25 token list for a chunk.
 
-        Delegates to the shared canonical tokenizer (rag.shared.bm25.tokenizer)
-        so that index-time and query-time tokenisation are always identical.
+        Three token sources are merged (order-preserving deduplication):
+        1. Word tokens — shared canonical tokenizer on chunk text.
+        2. Clause-digit tokens — e.g. "7.5.2" → ["7", "5", "2"].
+        3. Vocabulary tokens — ISO canonical keys found in chunk text via
+           scan_iso_vocabulary(), split into unigrams by tokenize_for_bm25.
+
+        The vocabulary scan uses the same logic as the query transformer,
+        ensuring that any surface form present in the chunk (e.g. "améliorer")
+        injects the same canonical key unigrams (e.g. ["amélioration", "continue"])
+        that a query would inject — guaranteeing BM25 sparse-match symmetry.
 
         Parameters
         ----------
@@ -220,10 +238,15 @@ class Enricher:
         -------
         List[str] — deduplicated tokens in source order.
         """
+        vocab_hits = scan_iso_vocabulary(
+            text=chunk.text,
+            language=self._language,
+            norm_filter=[chunk.norm_id],
+        )
         return tokenize_for_bm25(
             text=chunk.text,
             clause_ref=chunk.clause_number,
-            bonus_terms=chunk.keywords,
+            bonus_terms=chunk.keywords + vocab_hits,
         )
 
     # ── Public API ────────────────────────────────────────────────────────────

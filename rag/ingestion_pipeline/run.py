@@ -4,7 +4,7 @@ from rag.ingestion_pipeline.pdf_parser import parse_iso_pdf
 from rag.ingestion_pipeline.pipeline import segment, embed_and_store
 
 base_dir = Path(__file__).parent
-pdf_path = base_dir / "data" / "n9001.pdf"
+pdf_path = base_dir / "data" / "n14001.pdf"
 
 if not pdf_path.exists():
     print(f"Error: PDF not found at {pdf_path}")

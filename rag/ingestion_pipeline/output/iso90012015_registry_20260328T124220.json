@@ -1,6 +1,6 @@
 {
   "standard_id": "ISO 9001:2015",
-  "generated_at": "2026-03-27T21:49:17.939556",
+  "generated_at": "2026-03-28T12:42:20.952837",
   "chunk_count": 95,
   "clause_tree": {
     "clause_id": "root",
@@ -720,7 +720,12 @@
         "exigence",
         "légale",
         "réglementaire",
-        "1"
+        "1",
+        "compétence",
+        "non-conformité",
+        "obligations",
+        "de",
+        "orientation"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -780,7 +785,10 @@
         "principes",
         "essentiels",
         "vocabulaire",
-        "2"
+        "2",
+        "informations",
+        "documentées",
+        "non-conformité"
       ],
       "related_clauses": [
         "ISO 9000:2015"
@@ -823,7 +831,8 @@
         "donnés",
         "iso",
         "appliquent",
-        "3"
+        "3",
+        "exigence"
       ],
       "related_clauses": [
         "ISO 9000:2015"
@@ -949,7 +958,16 @@
         "connaissances",
         "performance",
         "4",
-        "1"
+        "1",
+        "4.1",
+        "action",
+        "corrective",
+        "de",
+        "l'organisme",
+        "formation",
+        "non-conformité",
+        "objectifs",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1013,7 +1031,18 @@
         "informations",
         "relatives",
         "4",
-        "2"
+        "2",
+        "4.2",
+        "compétence",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité",
+        "orientation",
+        "client",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1114,7 +1143,20 @@
         "satisfaction",
         "clients",
         "4",
-        "3"
+        "3",
+        "4.1",
+        "4.2",
+        "4.3",
+        "compétence",
+        "contexte",
+        "de",
+        "l'organisme",
+        "d'application",
+        "formation",
+        "informations",
+        "documentées",
+        "non-conformité",
+        "la"
       ],
       "related_clauses": [
         "4.1",
@@ -1153,7 +1195,10 @@
         "management",
         "qualité",
         "processus",
-        "4"
+        "4",
+        "4.4",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1245,7 +1290,24 @@
         "produisent",
         "résultats",
         "4",
-        "1"
+        "1",
+        "4.4.1",
+        "6.1",
+        "amélioration",
+        "exigence",
+        "indicateur",
+        "non-conformité",
+        "objectifs",
+        "risque",
+        "et",
+        "rôles",
+        "mesure",
+        "de",
+        "la",
+        "à",
+        "les",
+        "informations",
+        "documentées"
       ],
       "related_clauses": [
         "6.1"
@@ -1297,7 +1359,12 @@
         "comme",
         "prévu",
         "4",
-        "2"
+        "2",
+        "4.4.2",
+        "les",
+        "formation",
+        "non-conformité",
+        "à"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1359,7 +1426,9 @@
         "leadership",
         "engagement",
         "5",
-        "1"
+        "1",
+        "5.1",
+        "et"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1469,7 +1538,16 @@
         "lucratif",
         "non",
         "5",
-        "1"
+        "1",
+        "5.1.1",
+        "par",
+        "les",
+        "exigence",
+        "externalisation",
+        "non-conformité",
+        "risque",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1537,7 +1615,16 @@
         "préservée",
         "5",
         "1",
-        "2"
+        "2",
+        "5.1.2",
+        "amélioration",
+        "compétence",
+        "exigence",
+        "non-conformité",
+        "obligations",
+        "de",
+        "risque",
+        "du"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1567,7 +1654,8 @@
       "bm25_tokens": [
         "politique",
         "5",
-        "2"
+        "2",
+        "5.2"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1629,7 +1717,18 @@
         "management",
         "5",
         "2",
-        "1"
+        "1",
+        "5.2.1",
+        "exigence",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité",
+        "la",
+        "à",
+        "les",
+        "informations",
+        "documentées"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1684,7 +1783,11 @@
         "cas",
         "échéant",
         "5",
-        "2"
+        "2",
+        "5.2.2",
+        "formation",
+        "informations",
+        "documentées"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1760,7 +1863,15 @@
         "intégrité",
         "maintenue",
         "5",
-        "3"
+        "3",
+        "10.1",
+        "5.3",
+        "exigence",
+        "non-conformité",
+        "objectifs",
+        "et",
+        "de",
+        "la"
       ],
       "related_clauses": [
         "10.1"
@@ -1829,7 +1940,11 @@
         "risques",
         "opportunités",
         "6",
-        "1"
+        "1",
+        "6.1",
+        "aux",
+        "et",
+        "risque"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -1893,7 +2008,16 @@
         "indésirables",
         "améliorer",
         "6",
-        "1"
+        "1",
+        "4.1",
+        "4.2",
+        "6.1.1",
+        "amélioration",
+        "exigence",
+        "non-conformité",
+        "risque",
+        "de",
+        "la"
       ],
       "related_clauses": [
         "4.1",
@@ -1996,7 +2120,13 @@
         "besoins",
         "6",
         "1",
-        "2"
+        "2",
+        "4.4",
+        "6.1.2",
+        "aux",
+        "et",
+        "exigence",
+        "non-conformité"
       ],
       "related_clauses": [
         "4.4"
@@ -2037,7 +2167,8 @@
         "pour",
         "atteindre",
         "6",
-        "2"
+        "2",
+        "6.2"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2107,7 +2238,17 @@
         "documentées",
         "6",
         "2",
-        "1"
+        "1",
+        "6.2.1",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "obligations",
+        "de",
+        "du",
+        "la",
+        "à",
+        "les"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2159,7 +2300,9 @@
         "résultats",
         "évalués",
         "6",
-        "2"
+        "2",
+        "6.2.2",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2218,7 +2361,16 @@
         "responsabilités",
         "autorités",
         "6",
-        "3"
+        "3",
+        "4.4",
+        "6.3",
+        "exigence",
+        "non-conformité",
+        "des",
+        "rôles",
+        "et",
+        "de",
+        "la"
       ],
       "related_clauses": [
         "4.4"
@@ -2279,7 +2431,8 @@
       "bm25_tokens": [
         "ressources",
         "7",
-        "1"
+        "1",
+        "7.1"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2337,7 +2490,13 @@
         "prestataires",
         "externes",
         "7",
-        "1"
+        "1",
+        "7.1.1",
+        "action",
+        "corrective",
+        "externalisation",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2385,7 +2544,10 @@
         "processus",
         "7",
         "1",
-        "2"
+        "2",
+        "7.1.2",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2445,7 +2607,10 @@
         "communication",
         "7",
         "1",
-        "3"
+        "3",
+        "7.1.3",
+        "formation",
+        "ressources"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2527,7 +2692,8 @@
         "fournis",
         "7",
         "1",
-        "4"
+        "4",
+        "7.1.4"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2565,7 +2731,11 @@
         "mesure",
         "7",
         "1",
-        "5"
+        "5",
+        "7.1.5",
+        "indicateur",
+        "non-conformité",
+        "et"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2631,7 +2801,14 @@
         "démontrant",
         "7",
         "1",
-        "5"
+        "5",
+        "7.1.5.1",
+        "les",
+        "exigence",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "et"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2729,7 +2906,16 @@
         "7",
         "1",
         "5",
-        "2"
+        "2",
+        "7.1.5.2",
+        "formation",
+        "identification",
+        "et",
+        "indicateur",
+        "informations",
+        "documentées",
+        "non-conformité",
+        "surveillance"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2835,7 +3021,13 @@
         "prestataires",
         "7",
         "1",
-        "6"
+        "6",
+        "7.1.6",
+        "amélioration",
+        "exigence",
+        "externalisation",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2917,7 +3109,11 @@
         "direct",
         "traitance",
         "7",
-        "2"
+        "2",
+        "7.2",
+        "compétence",
+        "externalisation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -2976,7 +3172,13 @@
         "respect",
         "exigences",
         "7",
-        "3"
+        "3",
+        "7.3",
+        "conformité",
+        "exigence",
+        "non-conformité",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3028,7 +3230,11 @@
         "comment",
         "communique",
         "7",
-        "4"
+        "4",
+        "7.4",
+        "exigence",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3061,7 +3267,9 @@
         "informations",
         "documentées",
         "7",
-        "5"
+        "5",
+        "7.5",
+        "formation"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3127,7 +3335,12 @@
         "personnes",
         "7",
         "5",
-        "1"
+        "1",
+        "7.5.1",
+        "formation",
+        "non-conformité",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3195,7 +3408,10 @@
         "adéquation",
         "7",
         "5",
-        "2"
+        "2",
+        "7.5.2",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3232,7 +3448,10 @@
         "documentées",
         "7",
         "5",
-        "3"
+        "3",
+        "7.5.3",
+        "formation",
+        "des"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3292,7 +3511,11 @@
         "7",
         "5",
         "3",
-        "1"
+        "1",
+        "7.5.3.1",
+        "formation",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3383,7 +3606,13 @@
         "7",
         "5",
         "3",
-        "2"
+        "2",
+        "7.5.3.2",
+        "formation",
+        "des",
+        "non-conformité",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3418,7 +3647,8 @@
         "réalisation",
         "activités",
         "opérationnelles",
-        "8"
+        "8",
+        "des"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3516,7 +3746,21 @@
         "externalisés",
         "maîtrisés",
         "8",
-        "1"
+        "1",
+        "4.4",
+        "8.1",
+        "8.4",
+        "exigence",
+        "aux",
+        "et",
+        "externalisation",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "obligations",
+        "de",
+        "des",
+        "surveillance"
       ],
       "related_clauses": [
         "4.4",
@@ -3556,7 +3800,12 @@
         "produits",
         "services",
         "8",
-        "2"
+        "2",
+        "8.2",
+        "exigence",
+        "aux",
+        "et",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3621,7 +3870,11 @@
         "échéant",
         "8",
         "2",
-        "1"
+        "1",
+        "8.2.1",
+        "exigence",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3676,7 +3929,15 @@
         "réclamations",
         "propose",
         "8",
-        "2"
+        "2",
+        "8.2.2",
+        "exigence",
+        "aux",
+        "et",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3715,7 +3976,12 @@
         "services",
         "8",
         "2",
-        "3"
+        "3",
+        "8.2.3",
+        "exigence",
+        "aux",
+        "et",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3820,7 +4086,14 @@
         "8",
         "2",
         "3",
-        "1"
+        "1",
+        "8.2.3.1",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3867,7 +4140,10 @@
         "services",
         "8",
         "2",
-        "3"
+        "3",
+        "8.2.3.2",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3917,7 +4193,13 @@
         "lorsque",
         "8",
         "2",
-        "4"
+        "4",
+        "8.2.4",
+        "exigence",
+        "aux",
+        "et",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -3954,7 +4236,10 @@
         "produits",
         "services",
         "8",
-        "3"
+        "3",
+        "8.3",
+        "et",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4004,7 +4289,14 @@
         "services",
         "8",
         "3",
-        "1"
+        "1",
+        "8.3.1",
+        "et",
+        "non-conformité",
+        "à",
+        "les",
+        "informations",
+        "documentées"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4095,7 +4387,16 @@
         "satisfaites",
         "8",
         "3",
-        "2"
+        "2",
+        "8.3.2",
+        "et",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "opérationnelles",
+        "rôles"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4176,7 +4477,15 @@
         "conserver",
         "documentées",
         "8",
-        "3"
+        "3",
+        "8.3.3",
+        "et",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4262,7 +4571,13 @@
         "adaptée",
         "8",
         "3",
-        "4"
+        "4",
+        "8.3.4",
+        "compétence",
+        "et",
+        "exigence",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4333,7 +4648,17 @@
         "documentées",
         "8",
         "3",
-        "5"
+        "5",
+        "8.3.5",
+        "et",
+        "exigence",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4401,7 +4726,12 @@
         "négatifs",
         "8",
         "3",
-        "6"
+        "6",
+        "8.3.6",
+        "et",
+        "exigence",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4441,7 +4771,9 @@
         "prestataires",
         "externes",
         "8",
-        "4"
+        "4",
+        "8.4",
+        "externalisation"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4525,7 +4857,16 @@
         "évaluations",
         "8",
         "4",
-        "1"
+        "1",
+        "8.4.1",
+        "analyse",
+        "et",
+        "compétence",
+        "exigence",
+        "externalisation",
+        "formation",
+        "non-conformité",
+        "mesure"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4609,7 +4950,16 @@
         "satisfont",
         "8",
         "4",
-        "2"
+        "2",
+        "8.4.2",
+        "compétence",
+        "exigence",
+        "externalisation",
+        "non-conformité",
+        "orientation",
+        "client",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4684,7 +5034,17 @@
         "locaux",
         "8",
         "4",
-        "3"
+        "3",
+        "8.4.3",
+        "compétence",
+        "exigence",
+        "externalisation",
+        "formation",
+        "infrastructure",
+        "des",
+        "et",
+        "non-conformité",
+        "mesure"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4720,7 +5080,12 @@
         "prestation",
         "service",
         "8",
-        "5"
+        "5",
+        "8.5",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4826,7 +5191,17 @@
         "après",
         "8",
         "5",
-        "1"
+        "1",
+        "8.5.1",
+        "compétence",
+        "exigence",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "opérationnelles",
+        "et"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4893,7 +5268,18 @@
         "nécessaires",
         "8",
         "5",
-        "2"
+        "2",
+        "8.5.2",
+        "les",
+        "formation",
+        "et",
+        "indicateur",
+        "non-conformité",
+        "ressources",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -4975,7 +5361,12 @@
         "personnelles",
         "8",
         "5",
-        "3"
+        "3",
+        "8.5.3",
+        "externalisation",
+        "formation",
+        "infrastructure",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5036,7 +5427,17 @@
         "protection",
         "8",
         "5",
-        "4"
+        "4",
+        "8.5.4",
+        "exigence",
+        "indicateur",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles",
+        "surveillance",
+        "et"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5114,7 +5515,15 @@
         "élimination",
         "finale",
         "8",
-        "5"
+        "5",
+        "8.5.5",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "de",
+        "conformité",
+        "orientation",
+        "client"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5175,7 +5584,20 @@
         "issues",
         "8",
         "5",
-        "6"
+        "6",
+        "8.5.6",
+        "les",
+        "exigence",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "planification",
+        "des",
+        "réalisation",
+        "activités",
+        "opérationnelles",
+        "surveillance",
+        "et"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5251,7 +5673,16 @@
         "ayant",
         "autorisé",
         "8",
-        "6"
+        "6",
+        "8.6",
+        "les",
+        "exigence",
+        "aux",
+        "et",
+        "formation",
+        "identification",
+        "des",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5289,7 +5720,9 @@
         "non",
         "conformes",
         "8",
-        "7"
+        "7",
+        "8.7",
+        "de"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5375,7 +5808,18 @@
         "corrigés",
         "8",
         "7",
-        "1"
+        "1",
+        "8.7.1",
+        "action",
+        "corrective",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles",
+        "de"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5426,7 +5870,11 @@
         "avec",
         "8",
         "7",
-        "2"
+        "2",
+        "8.7.2",
+        "les",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5458,7 +5906,11 @@
       "bm25_tokens": [
         "évaluation",
         "performances",
-        "9"
+        "9",
+        "analyse",
+        "et",
+        "non-conformité",
+        "des"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5495,7 +5947,11 @@
         "analyse",
         "évaluation",
         "9",
-        "1"
+        "1",
+        "9.1",
+        "et",
+        "indicateur",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5562,7 +6018,14 @@
         "comme",
         "preuves",
         "9",
-        "1"
+        "1",
+        "9.1.1",
+        "et",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5637,7 +6100,14 @@
         "distributeurs",
         "9",
         "1",
-        "2"
+        "2",
+        "9.1.2",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "du",
+        "et",
+        "mesure"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5717,7 +6187,18 @@
         "statistiques",
         "9",
         "1",
-        "3"
+        "3",
+        "9.1.3",
+        "amélioration",
+        "et",
+        "exigence",
+        "externalisation",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "risque",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5750,7 +6231,8 @@
         "audit",
         "interne",
         "9",
-        "2"
+        "2",
+        "9.2"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5810,7 +6292,15 @@
         "jour",
         "9",
         "2",
-        "1"
+        "1",
+        "9.2.1",
+        "audit",
+        "interne",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5904,7 +6394,15 @@
         "lignes",
         "directrices",
         "9",
-        "2"
+        "2",
+        "9.2.2",
+        "action",
+        "corrective",
+        "domaine",
+        "d'application",
+        "exigence",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [
         "ISO 19011"
@@ -5939,7 +6437,9 @@
         "revue",
         "direction",
         "9",
-        "3"
+        "3",
+        "9.3",
+        "de"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -5995,7 +6495,10 @@
         "stratégique",
         "9",
         "3",
-        "1"
+        "1",
+        "9.3.1",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -6090,7 +6593,21 @@
         "amélioration",
         "9",
         "3",
-        "2"
+        "2",
+        "6.1",
+        "9.3.2",
+        "action",
+        "corrective",
+        "contexte",
+        "de",
+        "l'organisme",
+        "externalisation",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "risque",
+        "et",
+        "la"
       ],
       "related_clauses": [
         "6.1"
@@ -6149,7 +6666,13 @@
         "preuves",
         "revues",
         "9",
-        "3"
+        "3",
+        "9.3.3",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -6256,7 +6779,13 @@
         "innovation",
         "réorganisation",
         "10",
-        "1"
+        "1",
+        "10.1",
+        "exigence",
+        "non-conformité",
+        "du",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -6293,7 +6822,9 @@
         "action",
         "corrective",
         "10",
-        "2"
+        "2",
+        "10.2",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -6388,7 +6919,13 @@
         "rencontrées",
         "10",
         "2",
-        "1"
+        "1",
+        "10.2.1",
+        "non-conformité",
+        "risque",
+        "et",
+        "de",
+        "la"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -6435,7 +6972,11 @@
         "résultats",
         "corrective",
         "10",
-        "2"
+        "2",
+        "10.2.2",
+        "conformité",
+        "formation",
+        "non-conformité"
       ],
       "related_clauses": [],
       "embedding_model": ""
@@ -6496,7 +7037,12 @@
         "considérer",
         "cadre",
         "10",
-        "3"
+        "3",
+        "10.3",
+        "et",
+        "exigence",
+        "non-conformité",
+        "de"
       ],
       "related_clauses": [],
       "embedding_model": ""

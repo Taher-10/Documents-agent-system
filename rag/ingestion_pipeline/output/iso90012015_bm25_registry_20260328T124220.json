@@ -1,6 +1,6 @@
 {
   "standard_id": "ISO 9001:2015",
-  "generated_at": "2026-03-27T21:49:17.950685",
+  "generated_at": "2026-03-28T12:42:20.964031",
   "chunk_count": 95,
   "entries": [
     {
@@ -76,9 +76,14 @@
         "exigence",
         "légale",
         "réglementaire",
-        "1"
+        "1",
+        "compétence",
+        "non-conformité",
+        "obligations",
+        "de",
+        "orientation"
       ],
-      "token_count": 62
+      "token_count": 67
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -112,9 +117,12 @@
         "principes",
         "essentiels",
         "vocabulaire",
-        "2"
+        "2",
+        "informations",
+        "documentées",
+        "non-conformité"
       ],
-      "token_count": 29
+      "token_count": 32
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -129,9 +137,10 @@
         "donnés",
         "iso",
         "appliquent",
-        "3"
+        "3",
+        "exigence"
       ],
-      "token_count": 10
+      "token_count": 11
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -207,9 +216,18 @@
         "connaissances",
         "performance",
         "4",
-        "1"
+        "1",
+        "4.1",
+        "action",
+        "corrective",
+        "de",
+        "l'organisme",
+        "formation",
+        "non-conformité",
+        "objectifs",
+        "la"
       ],
-      "token_count": 61
+      "token_count": 70
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -247,9 +265,20 @@
         "informations",
         "relatives",
         "4",
-        "2"
+        "2",
+        "4.2",
+        "compétence",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité",
+        "orientation",
+        "client",
+        "la"
       ],
-      "token_count": 33
+      "token_count": 44
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -324,9 +353,22 @@
         "satisfaction",
         "clients",
         "4",
-        "3"
+        "3",
+        "4.1",
+        "4.2",
+        "4.3",
+        "compétence",
+        "contexte",
+        "de",
+        "l'organisme",
+        "d'application",
+        "formation",
+        "informations",
+        "documentées",
+        "non-conformité",
+        "la"
       ],
-      "token_count": 70
+      "token_count": 83
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -336,9 +378,12 @@
         "management",
         "qualité",
         "processus",
-        "4"
+        "4",
+        "4.4",
+        "de",
+        "la"
       ],
-      "token_count": 5
+      "token_count": 8
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -404,9 +449,26 @@
         "produisent",
         "résultats",
         "4",
-        "1"
+        "1",
+        "4.4.1",
+        "6.1",
+        "amélioration",
+        "exigence",
+        "indicateur",
+        "non-conformité",
+        "objectifs",
+        "risque",
+        "et",
+        "rôles",
+        "mesure",
+        "de",
+        "la",
+        "à",
+        "les",
+        "informations",
+        "documentées"
       ],
-      "token_count": 61
+      "token_count": 78
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -430,9 +492,14 @@
         "comme",
         "prévu",
         "4",
-        "2"
+        "2",
+        "4.4.2",
+        "les",
+        "formation",
+        "non-conformité",
+        "à"
       ],
-      "token_count": 19
+      "token_count": 24
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -450,9 +517,11 @@
         "leadership",
         "engagement",
         "5",
-        "1"
+        "1",
+        "5.1",
+        "et"
       ],
-      "token_count": 4
+      "token_count": 6
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -536,9 +605,18 @@
         "lucratif",
         "non",
         "5",
-        "1"
+        "1",
+        "5.1.1",
+        "par",
+        "les",
+        "exigence",
+        "externalisation",
+        "non-conformité",
+        "risque",
+        "de",
+        "la"
       ],
-      "token_count": 79
+      "token_count": 88
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -580,9 +658,18 @@
         "préservée",
         "5",
         "1",
-        "2"
+        "2",
+        "5.1.2",
+        "amélioration",
+        "compétence",
+        "exigence",
+        "non-conformité",
+        "obligations",
+        "de",
+        "risque",
+        "du"
       ],
-      "token_count": 37
+      "token_count": 46
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -590,9 +677,10 @@
       "bm25_tokens": [
         "politique",
         "5",
-        "2"
+        "2",
+        "5.2"
       ],
-      "token_count": 3
+      "token_count": 4
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -628,9 +716,20 @@
         "management",
         "5",
         "2",
-        "1"
+        "1",
+        "5.2.1",
+        "exigence",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité",
+        "la",
+        "à",
+        "les",
+        "informations",
+        "documentées"
       ],
-      "token_count": 31
+      "token_count": 42
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -659,9 +758,13 @@
         "cas",
         "échéant",
         "5",
-        "2"
+        "2",
+        "5.2.2",
+        "formation",
+        "informations",
+        "documentées"
       ],
-      "token_count": 24
+      "token_count": 28
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -711,9 +814,17 @@
         "intégrité",
         "maintenue",
         "5",
-        "3"
+        "3",
+        "10.1",
+        "5.3",
+        "exigence",
+        "non-conformité",
+        "objectifs",
+        "et",
+        "de",
+        "la"
       ],
-      "token_count": 45
+      "token_count": 53
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -734,9 +845,13 @@
         "risques",
         "opportunités",
         "6",
-        "1"
+        "1",
+        "6.1",
+        "aux",
+        "et",
+        "risque"
       ],
-      "token_count": 7
+      "token_count": 11
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -774,9 +889,18 @@
         "indésirables",
         "améliorer",
         "6",
-        "1"
+        "1",
+        "4.1",
+        "4.2",
+        "6.1.1",
+        "amélioration",
+        "exigence",
+        "non-conformité",
+        "risque",
+        "de",
+        "la"
       ],
-      "token_count": 33
+      "token_count": 42
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -850,9 +974,15 @@
         "besoins",
         "6",
         "1",
-        "2"
+        "2",
+        "4.4",
+        "6.1.2",
+        "aux",
+        "et",
+        "exigence",
+        "non-conformité"
       ],
-      "token_count": 69
+      "token_count": 75
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -865,9 +995,10 @@
         "pour",
         "atteindre",
         "6",
-        "2"
+        "2",
+        "6.2"
       ],
-      "token_count": 8
+      "token_count": 9
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -911,9 +1042,19 @@
         "documentées",
         "6",
         "2",
-        "1"
+        "1",
+        "6.2.1",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "obligations",
+        "de",
+        "du",
+        "la",
+        "à",
+        "les"
       ],
-      "token_count": 39
+      "token_count": 49
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -939,9 +1080,11 @@
         "résultats",
         "évalués",
         "6",
-        "2"
+        "2",
+        "6.2.2",
+        "non-conformité"
       ],
-      "token_count": 21
+      "token_count": 23
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -974,9 +1117,18 @@
         "responsabilités",
         "autorités",
         "6",
-        "3"
+        "3",
+        "4.4",
+        "6.3",
+        "exigence",
+        "non-conformité",
+        "des",
+        "rôles",
+        "et",
+        "de",
+        "la"
       ],
-      "token_count": 28
+      "token_count": 37
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -993,9 +1145,10 @@
       "bm25_tokens": [
         "ressources",
         "7",
-        "1"
+        "1",
+        "7.1"
       ],
-      "token_count": 3
+      "token_count": 4
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1027,9 +1180,15 @@
         "prestataires",
         "externes",
         "7",
-        "1"
+        "1",
+        "7.1.1",
+        "action",
+        "corrective",
+        "externalisation",
+        "de",
+        "la"
       ],
-      "token_count": 27
+      "token_count": 33
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1051,9 +1210,12 @@
         "processus",
         "7",
         "1",
-        "2"
+        "2",
+        "7.1.2",
+        "de",
+        "la"
       ],
-      "token_count": 17
+      "token_count": 20
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1087,9 +1249,12 @@
         "communication",
         "7",
         "1",
-        "3"
+        "3",
+        "7.1.3",
+        "formation",
+        "ressources"
       ],
-      "token_count": 29
+      "token_count": 32
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1145,9 +1310,10 @@
         "fournis",
         "7",
         "1",
-        "4"
+        "4",
+        "7.1.4"
       ],
-      "token_count": 51
+      "token_count": 52
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1159,9 +1325,13 @@
         "mesure",
         "7",
         "1",
-        "5"
+        "5",
+        "7.1.5",
+        "indicateur",
+        "non-conformité",
+        "et"
       ],
-      "token_count": 7
+      "token_count": 11
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1201,9 +1371,16 @@
         "démontrant",
         "7",
         "1",
-        "5"
+        "5",
+        "7.1.5.1",
+        "les",
+        "exigence",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "et"
       ],
-      "token_count": 35
+      "token_count": 42
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1275,9 +1452,18 @@
         "7",
         "1",
         "5",
-        "2"
+        "2",
+        "7.1.5.2",
+        "formation",
+        "identification",
+        "et",
+        "indicateur",
+        "informations",
+        "documentées",
+        "non-conformité",
+        "surveillance"
       ],
-      "token_count": 67
+      "token_count": 76
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1357,9 +1543,15 @@
         "prestataires",
         "7",
         "1",
-        "6"
+        "6",
+        "7.1.6",
+        "amélioration",
+        "exigence",
+        "externalisation",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 75
+      "token_count": 81
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1415,9 +1607,13 @@
         "direct",
         "traitance",
         "7",
-        "2"
+        "2",
+        "7.2",
+        "compétence",
+        "externalisation",
+        "non-conformité"
       ],
-      "token_count": 51
+      "token_count": 55
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1450,9 +1646,15 @@
         "respect",
         "exigences",
         "7",
-        "3"
+        "3",
+        "7.3",
+        "conformité",
+        "exigence",
+        "non-conformité",
+        "de",
+        "la"
       ],
-      "token_count": 28
+      "token_count": 34
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1478,9 +1680,13 @@
         "comment",
         "communique",
         "7",
-        "4"
+        "4",
+        "7.4",
+        "exigence",
+        "de",
+        "la"
       ],
-      "token_count": 21
+      "token_count": 25
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1489,9 +1695,11 @@
         "informations",
         "documentées",
         "7",
-        "5"
+        "5",
+        "7.5",
+        "formation"
       ],
-      "token_count": 4
+      "token_count": 6
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1531,9 +1739,14 @@
         "personnes",
         "7",
         "5",
-        "1"
+        "1",
+        "7.5.1",
+        "formation",
+        "non-conformité",
+        "de",
+        "la"
       ],
-      "token_count": 35
+      "token_count": 40
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1575,9 +1788,12 @@
         "adéquation",
         "7",
         "5",
-        "2"
+        "2",
+        "7.5.2",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 37
+      "token_count": 40
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1588,9 +1804,12 @@
         "documentées",
         "7",
         "5",
-        "3"
+        "3",
+        "7.5.3",
+        "formation",
+        "des"
       ],
-      "token_count": 6
+      "token_count": 9
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1624,9 +1843,13 @@
         "7",
         "5",
         "3",
-        "1"
+        "1",
+        "7.5.3.1",
+        "formation",
+        "de",
+        "la"
       ],
-      "token_count": 29
+      "token_count": 33
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1691,9 +1914,15 @@
         "7",
         "5",
         "3",
-        "2"
+        "2",
+        "7.5.3.2",
+        "formation",
+        "des",
+        "non-conformité",
+        "de",
+        "la"
       ],
-      "token_count": 60
+      "token_count": 66
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1702,9 +1931,10 @@
         "réalisation",
         "activités",
         "opérationnelles",
-        "8"
+        "8",
+        "des"
       ],
-      "token_count": 4
+      "token_count": 5
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1776,9 +2006,23 @@
         "externalisés",
         "maîtrisés",
         "8",
-        "1"
+        "1",
+        "4.4",
+        "8.1",
+        "8.4",
+        "exigence",
+        "aux",
+        "et",
+        "externalisation",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "obligations",
+        "de",
+        "des",
+        "surveillance"
       ],
-      "token_count": 67
+      "token_count": 81
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1789,9 +2033,14 @@
         "produits",
         "services",
         "8",
-        "2"
+        "2",
+        "8.2",
+        "exigence",
+        "aux",
+        "et",
+        "non-conformité"
       ],
-      "token_count": 6
+      "token_count": 11
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1830,9 +2079,13 @@
         "échéant",
         "8",
         "2",
-        "1"
+        "1",
+        "8.2.1",
+        "exigence",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 34
+      "token_count": 38
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1861,9 +2114,17 @@
         "réclamations",
         "propose",
         "8",
-        "2"
+        "2",
+        "8.2.2",
+        "exigence",
+        "aux",
+        "et",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité"
       ],
-      "token_count": 24
+      "token_count": 32
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1876,9 +2137,14 @@
         "services",
         "8",
         "2",
-        "3"
+        "3",
+        "8.2.3",
+        "exigence",
+        "aux",
+        "et",
+        "non-conformité"
       ],
-      "token_count": 8
+      "token_count": 13
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1957,9 +2223,16 @@
         "8",
         "2",
         "3",
-        "1"
+        "1",
+        "8.2.3.1",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité"
       ],
-      "token_count": 74
+      "token_count": 81
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -1980,9 +2253,12 @@
         "services",
         "8",
         "2",
-        "3"
+        "3",
+        "8.2.3.2",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 16
+      "token_count": 19
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2006,9 +2282,15 @@
         "lorsque",
         "8",
         "2",
-        "4"
+        "4",
+        "8.2.4",
+        "exigence",
+        "aux",
+        "et",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 19
+      "token_count": 25
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2019,9 +2301,12 @@
         "produits",
         "services",
         "8",
-        "3"
+        "3",
+        "8.3",
+        "et",
+        "non-conformité"
       ],
-      "token_count": 6
+      "token_count": 9
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2045,9 +2330,16 @@
         "services",
         "8",
         "3",
-        "1"
+        "1",
+        "8.3.1",
+        "et",
+        "non-conformité",
+        "à",
+        "les",
+        "informations",
+        "documentées"
       ],
-      "token_count": 19
+      "token_count": 26
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2112,9 +2404,18 @@
         "satisfaites",
         "8",
         "3",
-        "2"
+        "2",
+        "8.3.2",
+        "et",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "opérationnelles",
+        "rôles"
       ],
-      "token_count": 60
+      "token_count": 69
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2169,9 +2470,17 @@
         "conserver",
         "documentées",
         "8",
-        "3"
+        "3",
+        "8.3.3",
+        "et",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "obligations",
+        "de",
+        "conformité"
       ],
-      "token_count": 50
+      "token_count": 58
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2231,9 +2540,15 @@
         "adaptée",
         "8",
         "3",
-        "4"
+        "4",
+        "8.3.4",
+        "compétence",
+        "et",
+        "exigence",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 55
+      "token_count": 61
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2278,9 +2593,19 @@
         "documentées",
         "8",
         "3",
-        "5"
+        "5",
+        "8.3.5",
+        "et",
+        "exigence",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles"
       ],
-      "token_count": 40
+      "token_count": 50
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2322,9 +2647,14 @@
         "négatifs",
         "8",
         "3",
-        "6"
+        "6",
+        "8.3.6",
+        "et",
+        "exigence",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 37
+      "token_count": 42
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2338,9 +2668,11 @@
         "prestataires",
         "externes",
         "8",
-        "4"
+        "4",
+        "8.4",
+        "externalisation"
       ],
-      "token_count": 9
+      "token_count": 11
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2398,9 +2730,18 @@
         "évaluations",
         "8",
         "4",
-        "1"
+        "1",
+        "8.4.1",
+        "analyse",
+        "et",
+        "compétence",
+        "exigence",
+        "externalisation",
+        "formation",
+        "non-conformité",
+        "mesure"
       ],
-      "token_count": 53
+      "token_count": 62
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2458,9 +2799,18 @@
         "satisfont",
         "8",
         "4",
-        "2"
+        "2",
+        "8.4.2",
+        "compétence",
+        "exigence",
+        "externalisation",
+        "non-conformité",
+        "orientation",
+        "client",
+        "de",
+        "la"
       ],
-      "token_count": 53
+      "token_count": 62
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2509,9 +2859,19 @@
         "locaux",
         "8",
         "4",
-        "3"
+        "3",
+        "8.4.3",
+        "compétence",
+        "exigence",
+        "externalisation",
+        "formation",
+        "infrastructure",
+        "des",
+        "et",
+        "non-conformité",
+        "mesure"
       ],
-      "token_count": 44
+      "token_count": 54
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2521,9 +2881,14 @@
         "prestation",
         "service",
         "8",
-        "5"
+        "5",
+        "8.5",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles"
       ],
-      "token_count": 5
+      "token_count": 10
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2603,9 +2968,19 @@
         "après",
         "8",
         "5",
-        "1"
+        "1",
+        "8.5.1",
+        "compétence",
+        "exigence",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "opérationnelles",
+        "et"
       ],
-      "token_count": 75
+      "token_count": 85
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2646,9 +3021,20 @@
         "nécessaires",
         "8",
         "5",
-        "2"
+        "2",
+        "8.5.2",
+        "les",
+        "formation",
+        "et",
+        "indicateur",
+        "non-conformité",
+        "ressources",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles"
       ],
-      "token_count": 36
+      "token_count": 47
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2704,9 +3090,14 @@
         "personnelles",
         "8",
         "5",
-        "3"
+        "3",
+        "8.5.3",
+        "externalisation",
+        "formation",
+        "infrastructure",
+        "non-conformité"
       ],
-      "token_count": 51
+      "token_count": 56
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2741,9 +3132,19 @@
         "protection",
         "8",
         "5",
-        "4"
+        "4",
+        "8.5.4",
+        "exigence",
+        "indicateur",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles",
+        "surveillance",
+        "et"
       ],
-      "token_count": 30
+      "token_count": 40
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2795,9 +3196,17 @@
         "élimination",
         "finale",
         "8",
-        "5"
+        "5",
+        "8.5.5",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "de",
+        "conformité",
+        "orientation",
+        "client"
       ],
-      "token_count": 47
+      "token_count": 55
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2832,9 +3241,22 @@
         "issues",
         "8",
         "5",
-        "6"
+        "6",
+        "8.5.6",
+        "les",
+        "exigence",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "planification",
+        "des",
+        "réalisation",
+        "activités",
+        "opérationnelles",
+        "surveillance",
+        "et"
       ],
-      "token_count": 30
+      "token_count": 43
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2884,9 +3306,18 @@
         "ayant",
         "autorisé",
         "8",
-        "6"
+        "6",
+        "8.6",
+        "les",
+        "exigence",
+        "aux",
+        "et",
+        "formation",
+        "identification",
+        "des",
+        "non-conformité"
       ],
-      "token_count": 45
+      "token_count": 54
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2898,9 +3329,11 @@
         "non",
         "conformes",
         "8",
-        "7"
+        "7",
+        "8.7",
+        "de"
       ],
-      "token_count": 7
+      "token_count": 9
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2960,9 +3393,20 @@
         "corrigés",
         "8",
         "7",
-        "1"
+        "1",
+        "8.7.1",
+        "action",
+        "corrective",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "réalisation",
+        "des",
+        "activités",
+        "opérationnelles",
+        "de"
       ],
-      "token_count": 55
+      "token_count": 66
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2987,9 +3431,13 @@
         "avec",
         "8",
         "7",
-        "2"
+        "2",
+        "8.7.2",
+        "les",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 20
+      "token_count": 24
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -2997,9 +3445,13 @@
       "bm25_tokens": [
         "évaluation",
         "performances",
-        "9"
+        "9",
+        "analyse",
+        "et",
+        "non-conformité",
+        "des"
       ],
-      "token_count": 3
+      "token_count": 7
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3010,9 +3462,13 @@
         "analyse",
         "évaluation",
         "9",
-        "1"
+        "1",
+        "9.1",
+        "et",
+        "indicateur",
+        "non-conformité"
       ],
-      "token_count": 6
+      "token_count": 10
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3053,9 +3509,16 @@
         "comme",
         "preuves",
         "9",
-        "1"
+        "1",
+        "9.1.1",
+        "et",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "de",
+        "la"
       ],
-      "token_count": 36
+      "token_count": 43
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3104,9 +3567,16 @@
         "distributeurs",
         "9",
         "1",
-        "2"
+        "2",
+        "9.1.2",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "du",
+        "et",
+        "mesure"
       ],
-      "token_count": 44
+      "token_count": 51
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3160,9 +3630,20 @@
         "statistiques",
         "9",
         "1",
-        "3"
+        "3",
+        "9.1.3",
+        "amélioration",
+        "et",
+        "exigence",
+        "externalisation",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "risque",
+        "de",
+        "la"
       ],
-      "token_count": 49
+      "token_count": 60
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3171,9 +3652,10 @@
         "audit",
         "interne",
         "9",
-        "2"
+        "2",
+        "9.2"
       ],
-      "token_count": 4
+      "token_count": 5
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3207,9 +3689,17 @@
         "jour",
         "9",
         "2",
-        "1"
+        "1",
+        "9.2.1",
+        "audit",
+        "interne",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "de",
+        "la"
       ],
-      "token_count": 29
+      "token_count": 37
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3277,9 +3767,17 @@
         "lignes",
         "directrices",
         "9",
-        "2"
+        "2",
+        "9.2.2",
+        "action",
+        "corrective",
+        "domaine",
+        "d'application",
+        "exigence",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 63
+      "token_count": 71
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3288,9 +3786,11 @@
         "revue",
         "direction",
         "9",
-        "3"
+        "3",
+        "9.3",
+        "de"
       ],
-      "token_count": 4
+      "token_count": 6
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3320,9 +3820,12 @@
         "stratégique",
         "9",
         "3",
-        "1"
+        "1",
+        "9.3.1",
+        "de",
+        "la"
       ],
-      "token_count": 25
+      "token_count": 28
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3391,9 +3894,23 @@
         "amélioration",
         "9",
         "3",
-        "2"
+        "2",
+        "6.1",
+        "9.3.2",
+        "action",
+        "corrective",
+        "contexte",
+        "de",
+        "l'organisme",
+        "externalisation",
+        "formation",
+        "indicateur",
+        "non-conformité",
+        "risque",
+        "et",
+        "la"
       ],
-      "token_count": 64
+      "token_count": 78
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3424,9 +3941,15 @@
         "preuves",
         "revues",
         "9",
-        "3"
+        "3",
+        "9.3.3",
+        "exigence",
+        "formation",
+        "non-conformité",
+        "de",
+        "la"
       ],
-      "token_count": 26
+      "token_count": 32
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3487,9 +4010,15 @@
         "innovation",
         "réorganisation",
         "10",
-        "1"
+        "1",
+        "10.1",
+        "exigence",
+        "non-conformité",
+        "du",
+        "de",
+        "la"
       ],
-      "token_count": 47
+      "token_count": 53
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3500,9 +4029,11 @@
         "action",
         "corrective",
         "10",
-        "2"
+        "2",
+        "10.2",
+        "non-conformité"
       ],
-      "token_count": 6
+      "token_count": 8
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3571,9 +4102,15 @@
         "rencontrées",
         "10",
         "2",
-        "1"
+        "1",
+        "10.2.1",
+        "non-conformité",
+        "risque",
+        "et",
+        "de",
+        "la"
       ],
-      "token_count": 64
+      "token_count": 70
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3594,9 +4131,13 @@
         "résultats",
         "corrective",
         "10",
-        "2"
+        "2",
+        "10.2.2",
+        "conformité",
+        "formation",
+        "non-conformité"
       ],
-      "token_count": 16
+      "token_count": 20
     },
     {
       "norm_id": "ISO 9001:2015",
@@ -3631,9 +4172,14 @@
         "considérer",
         "cadre",
         "10",
-        "3"
+        "3",
+        "10.3",
+        "et",
+        "exigence",
+        "non-conformité",
+        "de"
       ],
-      "token_count": 30
+      "token_count": 35
     }
   ]
 }

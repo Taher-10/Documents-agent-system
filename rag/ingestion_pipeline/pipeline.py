@@ -139,7 +139,9 @@ def segment_document(doc: ParsedDocument, language: str = "") -> SegmenterResult
     chunks = assemble_norm_chunks(spans, doc.markdown, doc.standard_id, tracker)
 
     # Phase 5 — add TF-IDF keywords and BM25 tokens to every chunk
-    Enricher(chunks).enrich(chunks)
+    # Pass language so the enricher can apply the correct ISO vocabulary
+    # (EN or FR) for symmetric BM25 token normalization with the query side.
+    Enricher(chunks, language=language or "EN").enrich(chunks)
 
     # Stamp language onto every chunk (set by caller, not detected)
     if language:
