@@ -166,7 +166,7 @@ class HybridRetriever:
     async def retrieve(
         self,
         query: TransformedQuery,
-        top_k: int = 10,
+        top_k: int = 15,
         collection: str = "norms",
     ) -> List[RetrievedChunk]:
         """
@@ -186,7 +186,7 @@ class HybridRetriever:
         Parameters
         ----------
         query      : TransformedQuery produced by QueryTransformer.transform().
-        top_k      : Number of chunks to return.  Default 10.
+        top_k      : Number of chunks to return.  Default 15.
         collection : Qdrant collection name.  Default "norms".
 
         Returns
