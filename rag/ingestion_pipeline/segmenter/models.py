@@ -31,28 +31,32 @@ from typing import Dict, List, Tuple
 
 # Maps PDF stem → human-readable standard label
 STANDARD_ID_MAP: Dict[str, str] = {
-    "n9001":  "ISO 9001:2015",
-    "n14001": "ISO 14001:2015",
+    "n9001":    "ISO 9001:2015",
+    "n9001_en": "ISO 9001:2015",
+    "n14001":   "ISO 14001:2015",
 }
 
 # Maps PDF stem → short norm identifier (used as chunk ID prefix)
 NORM_ID_MAP: Dict[str, str] = {
-    "n9001":  "ISO9001",
-    "n14001": "ISO14001",
+    "n9001":    "ISO9001",
+    "n9001_en": "ISO9001",
+    "n14001":   "ISO14001",
 }
 
 # Maps PDF stem → publication year
 NORM_VERSION_MAP: Dict[str, str] = {
-    "n9001":  "2015",
-    "n14001": "2015",
+    "n9001":    "2015",
+    "n9001_en": "2015",
+    "n14001":   "2015",
 }
 
 # Acceptable leaf-clause count range per standard.
 # Used by construct_clause_tree() to validate structural integrity.
 # Range: (min_inclusive, max_inclusive)
 EXPECTED_LEAF_COUNTS: Dict[str, Tuple[int, int]] = {
-    "n9001":  (65, 75),
-    "n14001": (55, 70),
+    "n9001":    (65, 75),
+    "n9001_en": (65, 75),
+    "n14001":   (55, 70),
 }
 
 
