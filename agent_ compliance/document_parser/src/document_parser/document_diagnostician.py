@@ -1,0 +1,63 @@
+"""
+document_diagnostician.py — M1: Per-page triage and quality-tier routing.
+
+Build order: M6 (done) → M1 (this file) → M2-TierA → ...
+
+Public API:
+    inspect_document(path: Path) -> PageMap
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Literal
+
+from document_parser.parsed_document import UnsupportedFormatError
+
+
+# ---------------------------------------------------------------------------
+# Data models
+# ---------------------------------------------------------------------------
+
+@dataclass
+class PageInfo:
+    """Diagnostic snapshot of a single page.
+
+    Attributes:
+        page_number: 1-indexed page number.
+        page_type: "text" — selectable text dominant;
+                   "image" — image-only, near-zero text;
+                   "hybrid" — mixed or degraded.
+        has_selectable_text: True if any selectable text was extracted.
+        image_count: Number of embedded image objects on this page.
+        font_issue: True if non-embedded non-base14 fonts detected (broken encoding risk).
+        text_sample: First 200 chars of extracted text (for debugging).
+    """
+
+    page_number: int
+    page_type: Literal["text", "image", "hybrid"]
+    has_selectable_text: bool
+    image_count: int
+    font_issue: bool
+    text_sample: str
+
+
+@dataclass
+class PageMap:
+    """Full diagnostic result for one document.
+
+    Attributes:
+        total_pages: Total number of pages inspected.
+        file_format: "pdf" or "docx".
+        quality_tier: "A" = clean, "B" = hybrid/degraded, "C" = full scan.
+        pages: Per-page diagnostics, ordered 1…N.
+        producer: PDF producer string from metadata (e.g. "Microsoft Word 2016");
+                  None for DOCX or when unavailable.
+    """
+
+    total_pages: int
+    file_format: Literal["pdf", "docx"]
+    quality_tier: Literal["A", "B", "C"]
+    pages: list[PageInfo]
+    producer: str | None
