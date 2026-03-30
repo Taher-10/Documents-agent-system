@@ -1,6 +1,7 @@
 """test_diagnostician.py — M1 unit tests for document_diagnostician."""
 
 import pytest
+import fitz  # PyMuPDF
 from pathlib import Path
 from document_parser.document_diagnostician import PageInfo, PageMap, classify_page_type, assign_quality_tier, inspect_document
 from document_parser.parsed_document import UnsupportedFormatError
@@ -197,3 +198,106 @@ def test_inspect_unsupported_format_raises(tmp_path: Path):
     bad_file.write_text("not a pdf")
     with pytest.raises(UnsupportedFormatError, match=r"\.txt"):
         inspect_document(bad_file)
+
+
+# ---------------------------------------------------------------------------
+# Task 5 — inspect_document: PDF branch
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def text_pdf(tmp_path: Path) -> Path:
+    """Single-page clean-text PDF (Tier A)."""
+    path = tmp_path / "clean_text.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)  # A4
+    # Insert > 100 chars of selectable text
+    page.insert_text(
+        (72, 100),
+        "Procédure de Gestion des Gabarits Externes. "
+        "Ce document décrit les étapes nécessaires pour la gestion "
+        "des gabarits utilisés dans le processus de production.",
+        fontsize=11,
+    )
+    doc.save(str(path))
+    doc.close()
+    return path
+
+
+@pytest.fixture
+def image_pdf(tmp_path: Path) -> Path:
+    """Single-page image-only PDF (Tier C via >50% image pages)."""
+    path = tmp_path / "image_only.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    # Insert a raster image covering the page — no selectable text
+    pix = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 595, 842))
+    pix.clear_with(200)  # fill with light gray
+    page.insert_image(fitz.Rect(0, 0, 595, 842), pixmap=pix)
+    doc.save(str(path))
+    doc.close()
+    return path
+
+
+@pytest.fixture
+def mixed_pdf(tmp_path: Path) -> Path:
+    """Two-page PDF: page 1 = text, page 2 = image (Tier B)."""
+    path = tmp_path / "mixed.pdf"
+    doc = fitz.open()
+    # Page 1 — text
+    p1 = doc.new_page(width=595, height=842)
+    p1.insert_text(
+        (72, 100),
+        "Objet: Ce document décrit la procédure de gestion. " * 4,
+        fontsize=11,
+    )
+    # Page 2 — image only
+    p2 = doc.new_page(width=595, height=842)
+    pix = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 595, 842))
+    pix.clear_with(200)
+    p2.insert_image(fitz.Rect(0, 0, 595, 842), pixmap=pix)
+    doc.save(str(path))
+    doc.close()
+    return path
+
+
+def test_inspect_text_pdf_tier_a(text_pdf: Path):
+    page_map = inspect_document(text_pdf)
+    assert page_map.file_format == "pdf"
+    assert page_map.quality_tier == "A"
+    assert page_map.total_pages == 1
+    assert len(page_map.pages) == 1
+
+
+def test_inspect_text_pdf_page_classified_as_text(text_pdf: Path):
+    page_map = inspect_document(text_pdf)
+    page = page_map.pages[0]
+    assert page.page_type == "text"
+    assert page.has_selectable_text is True
+    assert page.page_number == 1
+
+
+def test_inspect_text_pdf_sample_captured(text_pdf: Path):
+    page_map = inspect_document(text_pdf)
+    assert "Procédure" in page_map.pages[0].text_sample
+
+
+def test_inspect_image_pdf_tier_c(image_pdf: Path):
+    page_map = inspect_document(image_pdf)
+    assert page_map.quality_tier == "C"
+    assert page_map.pages[0].page_type == "image"
+    assert page_map.pages[0].has_selectable_text is False
+
+
+def test_inspect_mixed_pdf_tier_b(mixed_pdf: Path):
+    page_map = inspect_document(mixed_pdf)
+    assert page_map.quality_tier == "B"
+    assert page_map.total_pages == 2
+    page_types = {p.page_number: p.page_type for p in page_map.pages}
+    assert page_types[1] == "text"
+    assert page_types[2] == "image"
+
+
+def test_inspect_pdf_image_count(image_pdf: Path):
+    page_map = inspect_document(image_pdf)
+    assert page_map.pages[0].image_count >= 1

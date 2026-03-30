@@ -182,5 +182,57 @@ def _inspect_docx(path: Path) -> PageMap:
 
 
 def _inspect_pdf(path: Path) -> PageMap:
-    """PDF inspection — implemented in Task 5."""
-    raise NotImplementedError("PDF inspection is implemented in Task 5 (_inspect_pdf).")
+    """Inspect a PDF file using PyMuPDF (fitz).
+
+    Font-issue detection: a font is flagged as problematic only if it is NOT a
+    base-14 font (xref != 0 means it is a real PDF font object, not a virtual
+    base-14 reference) AND it has no embedded font stream (ext == "").
+    Base-14 fonts (Helvetica, Times, Courier, …) have xref == 0 and are always
+    reliable, so they are excluded from font_issue.
+
+    Args:
+        path: Absolute path to a .pdf file.
+
+    Returns:
+        PageMap with per-page diagnostics and an overall quality tier.
+    """
+    import fitz  # local import keeps module importable without fitz installed
+
+    doc = fitz.open(str(path))
+    producer: str | None = doc.metadata.get("producer") or None
+
+    pages_info: list[PageInfo] = []
+    for i, page in enumerate(doc, start=1):
+        page_text = page.get_text()
+        images = page.get_images()
+        image_count = len(images)
+
+        # font_issue: non-base14 font without embedded stream
+        fonts = page.get_fonts(full=False)
+        font_issue = any(
+            f[0] != 0 and f[1] == ""  # real font object (xref != 0), not embedded (ext == "")
+            for f in fonts
+        )
+
+        page_type = classify_page_type(page_text, image_count, font_issue)
+        has_selectable = len(page_text.strip()) > 0
+
+        pages_info.append(PageInfo(
+            page_number=i,
+            page_type=page_type,
+            has_selectable_text=has_selectable,
+            image_count=image_count,
+            font_issue=font_issue,
+            text_sample=page_text[:200],
+        ))
+
+    doc.close()
+    quality_tier = assign_quality_tier(pages_info)
+
+    return PageMap(
+        total_pages=len(pages_info),
+        file_format="pdf",
+        quality_tier=quality_tier,
+        pages=pages_info,
+        producer=producer,
+    )
