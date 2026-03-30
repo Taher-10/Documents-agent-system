@@ -61,3 +61,35 @@ class PageMap:
     quality_tier: Literal["A", "B", "C"]
     pages: list[PageInfo]
     producer: str | None
+
+
+# ---------------------------------------------------------------------------
+# Pure classification functions
+# ---------------------------------------------------------------------------
+
+def classify_page_type(
+    page_text: str,
+    image_count: int,
+    font_issue: bool,
+) -> Literal["text", "image", "hybrid"]:
+    """Classify a single page as text, image, or hybrid.
+
+    Rules (in priority order):
+    - image:  stripped text length < 30 characters
+    - text:   stripped text length > 100 AND no font issue
+    - hybrid: everything else (30–100 chars, or >100 with font issue)
+
+    Args:
+        page_text: Raw text extracted from the page.
+        image_count: Number of embedded image objects on the page.
+        font_issue: True if non-embedded non-base14 fonts were detected.
+
+    Returns:
+        One of "text", "image", "hybrid".
+    """
+    stripped_len = len(page_text.strip())
+    if stripped_len < 30:
+        return "image"
+    if stripped_len > 100 and not font_issue:
+        return "text"
+    return "hybrid"
