@@ -3,8 +3,12 @@ document_diagnostician.py — M1: Per-page triage and quality-tier routing.
 
 Build order: M6 (done) → M1 (this file) → M2-TierA → ...
 
-Public API:
+Public API (planned end-state):
     inspect_document(path: Path) -> PageMap
+
+Current public functions (built so far):
+    classify_page_type(page_text, image_count, font_issue) -> Literal["text","image","hybrid"]
+    assign_quality_tier(pages) -> Literal["A","B","C"]
 """
 
 from __future__ import annotations

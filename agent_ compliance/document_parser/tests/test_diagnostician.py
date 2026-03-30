@@ -97,10 +97,10 @@ def test_classify_page_type(text, image_count, font_issue, expected):
 # ---------------------------------------------------------------------------
 
 
-def _make_page_info(page_type: str, font_issue: bool = False) -> PageInfo:
+def _make_page_info(page_type: str, font_issue: bool = False, page_number: int = 1) -> PageInfo:
     """Helper: build a PageInfo with the given page_type."""
     return PageInfo(
-        page_number=1,
+        page_number=page_number,
         page_type=page_type,  # type: ignore[arg-type]
         has_selectable_text=(page_type == "text"),
         image_count=0,
