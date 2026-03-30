@@ -48,7 +48,7 @@ def extract_tier_a(path: Path, page_map: PageMap) -> list[RawPageText]:
                     f"Page {page_info.page_number}: pdfplumber yielded "
                     f"{len(text.strip())} chars — falling back to fitz.",
                     UserWarning,
-                    stacklevel=2,
+                    stacklevel=2,  # points warning at caller of extract_tier_a
                 )
                 text = fitz_doc[idx].get_text()
                 method = "fitz"
