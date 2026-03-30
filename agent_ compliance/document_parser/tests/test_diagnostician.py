@@ -1,7 +1,7 @@
 """test_diagnostician.py — M1 unit tests for document_diagnostician."""
 
 import pytest
-from document_parser.document_diagnostician import PageInfo, PageMap
+from document_parser.document_diagnostician import PageInfo, PageMap, classify_page_type
 
 
 # ---------------------------------------------------------------------------
@@ -71,9 +71,6 @@ def test_page_map_producer_none():
 # ---------------------------------------------------------------------------
 # Task 2 — classify_page_type
 # ---------------------------------------------------------------------------
-
-from document_parser.document_diagnostician import classify_page_type
-
 
 @pytest.mark.parametrize("text,image_count,font_issue,expected", [
     # text: stripped len > 100 AND no font issue

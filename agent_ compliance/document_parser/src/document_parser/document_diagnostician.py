@@ -81,7 +81,10 @@ def classify_page_type(
 
     Args:
         page_text: Raw text extracted from the page.
-        image_count: Number of embedded image objects on the page.
+        image_count: Number of embedded image objects on the page. Accepted for
+            interface consistency with the diagnostician pipeline; not used by the
+            current text-yield rules (image-dominant heuristics are handled via
+            the text-length threshold, not image count).
         font_issue: True if non-embedded non-base14 fonts were detected.
 
     Returns:
