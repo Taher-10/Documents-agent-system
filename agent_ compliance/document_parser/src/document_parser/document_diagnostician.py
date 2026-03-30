@@ -125,3 +125,62 @@ def assign_quality_tier(pages: list[PageInfo]) -> Literal["A", "B", "C"]:
     if all(p.page_type == "text" and not p.font_issue for p in pages):
         return "A"
     return "B"
+
+
+# ---------------------------------------------------------------------------
+# inspect_document — public entry point
+# ---------------------------------------------------------------------------
+
+def inspect_document(path: Path) -> PageMap:
+    """Inspect a PDF or DOCX file and return per-page diagnostics + quality tier.
+
+    Does NOT extract full text — only samples enough to classify pages.
+    Called before any extractor (M2) runs.
+
+    Args:
+        path: Absolute path to a .pdf or .docx file.
+
+    Returns:
+        PageMap with total_pages, file_format, quality_tier, per-page PageInfo.
+
+    Raises:
+        UnsupportedFormatError: If the file extension is not .pdf or .docx.
+    """
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        return _inspect_pdf(path)
+    elif suffix == ".docx":
+        return _inspect_docx(path)
+    else:
+        raise UnsupportedFormatError(
+            f"Unsupported file format: '{suffix}'. Expected .pdf or .docx."
+        )
+
+
+def _inspect_docx(path: Path) -> PageMap:
+    """DOCX documents are always Tier A — treat entire doc as one text page."""
+    from docx import Document as DocxDocument  # local import — optional dep
+
+    doc = DocxDocument(str(path))
+    full_text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+    page = PageInfo(
+        page_number=1,
+        page_type="text",
+        has_selectable_text=True,
+        image_count=0,
+        font_issue=False,
+        text_sample=full_text[:200],
+    )
+    return PageMap(
+        total_pages=1,
+        file_format="docx",
+        quality_tier="A",
+        pages=[page],
+        producer=None,
+    )
+
+
+def _inspect_pdf(path: Path) -> PageMap:
+    """PDF inspection — implemented in Task 5."""
+    raise NotImplementedError("PDF inspection is implemented in Task 5 (_inspect_pdf).")

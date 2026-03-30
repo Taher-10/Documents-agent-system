@@ -1,7 +1,10 @@
 """test_diagnostician.py — M1 unit tests for document_diagnostician."""
 
 import pytest
-from document_parser.document_diagnostician import PageInfo, PageMap, classify_page_type, assign_quality_tier
+from pathlib import Path
+from document_parser.document_diagnostician import PageInfo, PageMap, classify_page_type, assign_quality_tier, inspect_document
+from document_parser.parsed_document import UnsupportedFormatError
+from docx import Document as DocxDocument
 
 
 # ---------------------------------------------------------------------------
@@ -145,3 +148,53 @@ def test_assign_tier_b_single_image_many_text():
     # 1 image out of 10 → 10%, not > 50% → B (not all text)
     pages = [_make_page_info("image")] + [_make_page_info("text")] * 9
     assert assign_quality_tier(pages) == "B"
+
+
+# ---------------------------------------------------------------------------
+# Task 4 — inspect_document: DOCX branch + UnsupportedFormatError
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def minimal_docx(tmp_path: Path) -> Path:
+    """Minimal DOCX with two paragraphs of text."""
+    path = tmp_path / "test_doc.docx"
+    doc = DocxDocument()
+    doc.add_paragraph("Ceci est un document de procédure QHSE.")
+    doc.add_paragraph("Il contient plusieurs paragraphes de texte de test.")
+    doc.save(str(path))
+    return path
+
+
+def test_inspect_docx_returns_tier_a(minimal_docx: Path):
+    page_map = inspect_document(minimal_docx)
+    assert page_map.file_format == "docx"
+    assert page_map.quality_tier == "A"
+    assert page_map.total_pages == 1
+    assert len(page_map.pages) == 1
+
+
+def test_inspect_docx_page_is_text(minimal_docx: Path):
+    page_map = inspect_document(minimal_docx)
+    page = page_map.pages[0]
+    assert page.page_type == "text"
+    assert page.has_selectable_text is True
+    assert page.font_issue is False
+    assert page.page_number == 1
+
+
+def test_inspect_docx_producer_is_none(minimal_docx: Path):
+    page_map = inspect_document(minimal_docx)
+    assert page_map.producer is None
+
+
+def test_inspect_docx_text_sample_captured(minimal_docx: Path):
+    page_map = inspect_document(minimal_docx)
+    assert "procédure QHSE" in page_map.pages[0].text_sample
+
+
+def test_inspect_unsupported_format_raises(tmp_path: Path):
+    bad_file = tmp_path / "document.txt"
+    bad_file.write_text("not a pdf")
+    with pytest.raises(UnsupportedFormatError, match=".txt"):
+        inspect_document(bad_file)
