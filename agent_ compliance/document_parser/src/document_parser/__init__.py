@@ -12,6 +12,7 @@ from document_parser.parsed_document import (
     ExtractionFailedError,
     ParsedDocument,
     ParsedSection,
+    RawPageText,
     SectionType,
     UnsupportedFormatError,
 )
@@ -25,6 +26,7 @@ __all__ = [
     # M6 — Data models
     "ParsedDocument",
     "ParsedSection",
+    "RawPageText",
     "SectionType",
     "UnsupportedFormatError",
     "ExtractionFailedError",
