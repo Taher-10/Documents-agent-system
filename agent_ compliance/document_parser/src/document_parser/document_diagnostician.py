@@ -168,7 +168,7 @@ def _inspect_docx(path: Path) -> PageMap:
         page_number=1,
         page_type="text",
         has_selectable_text=True,
-        image_count=0,
+        image_count=0,  # python-docx has no per-page image count at this stage
         font_issue=False,
         text_sample=full_text[:200],
     )

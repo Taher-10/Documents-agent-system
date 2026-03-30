@@ -4,8 +4,6 @@ import pytest
 from pathlib import Path
 from document_parser.document_diagnostician import PageInfo, PageMap, classify_page_type, assign_quality_tier, inspect_document
 from document_parser.parsed_document import UnsupportedFormatError
-from docx import Document as DocxDocument
-
 
 # ---------------------------------------------------------------------------
 # Task 1 — Dataclasses
@@ -158,6 +156,7 @@ def test_assign_tier_b_single_image_many_text():
 @pytest.fixture
 def minimal_docx(tmp_path: Path) -> Path:
     """Minimal DOCX with two paragraphs of text."""
+    from docx import Document as DocxDocument  # local import — optional dep
     path = tmp_path / "test_doc.docx"
     doc = DocxDocument()
     doc.add_paragraph("Ceci est un document de procédure QHSE.")
@@ -196,5 +195,5 @@ def test_inspect_docx_text_sample_captured(minimal_docx: Path):
 def test_inspect_unsupported_format_raises(tmp_path: Path):
     bad_file = tmp_path / "document.txt"
     bad_file.write_text("not a pdf")
-    with pytest.raises(UnsupportedFormatError, match=".txt"):
+    with pytest.raises(UnsupportedFormatError, match=r"\.txt"):
         inspect_document(bad_file)
