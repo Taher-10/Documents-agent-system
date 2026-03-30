@@ -1,7 +1,7 @@
 """test_diagnostician.py — M1 unit tests for document_diagnostician."""
 
 import pytest
-from document_parser.document_diagnostician import PageInfo, PageMap, classify_page_type
+from document_parser.document_diagnostician import PageInfo, PageMap, classify_page_type, assign_quality_tier
 
 
 # ---------------------------------------------------------------------------
@@ -90,3 +90,58 @@ def test_page_map_producer_none():
 ])
 def test_classify_page_type(text, image_count, font_issue, expected):
     assert classify_page_type(text, image_count, font_issue) == expected
+
+
+# ---------------------------------------------------------------------------
+# Task 3 — assign_quality_tier
+# ---------------------------------------------------------------------------
+
+
+def _make_page_info(page_type: str, font_issue: bool = False) -> PageInfo:
+    """Helper: build a PageInfo with the given page_type."""
+    return PageInfo(
+        page_number=1,
+        page_type=page_type,  # type: ignore[arg-type]
+        has_selectable_text=(page_type == "text"),
+        image_count=0,
+        font_issue=font_issue,
+        text_sample="",
+    )
+
+
+def test_assign_tier_a_all_text_no_font_issues():
+    pages = [_make_page_info("text") for _ in range(5)]
+    assert assign_quality_tier(pages) == "A"
+
+
+def test_assign_tier_b_has_font_issue():
+    pages = [_make_page_info("text", font_issue=True)] + [_make_page_info("text") for _ in range(4)]
+    assert assign_quality_tier(pages) == "B"
+
+
+def test_assign_tier_b_has_hybrid_page():
+    pages = [_make_page_info("hybrid")] + [_make_page_info("text") for _ in range(4)]
+    assert assign_quality_tier(pages) == "B"
+
+
+def test_assign_tier_c_majority_image():
+    # 3 image out of 5 → 60% > 50%
+    pages = [_make_page_info("image")] * 3 + [_make_page_info("text")] * 2
+    assert assign_quality_tier(pages) == "C"
+
+
+def test_assign_tier_b_exactly_half_image():
+    # 2 image out of 4 → exactly 50%, not > 50% → B
+    pages = [_make_page_info("image")] * 2 + [_make_page_info("text")] * 2
+    assert assign_quality_tier(pages) == "B"
+
+
+def test_assign_tier_c_all_image():
+    pages = [_make_page_info("image") for _ in range(4)]
+    assert assign_quality_tier(pages) == "C"
+
+
+def test_assign_tier_b_single_image_many_text():
+    # 1 image out of 10 → 10%, not > 50% → B (not all text)
+    pages = [_make_page_info("image")] + [_make_page_info("text")] * 9
+    assert assign_quality_tier(pages) == "B"

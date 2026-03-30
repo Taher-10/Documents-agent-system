@@ -96,3 +96,28 @@ def classify_page_type(
     if stripped_len > 100 and not font_issue:
         return "text"
     return "hybrid"
+
+
+def assign_quality_tier(pages: list[PageInfo]) -> Literal["A", "B", "C"]:
+    """Assign an overall quality tier from per-page diagnostics.
+
+    Rules:
+    - C: more than 50% of pages are type "image"
+    - A: ALL pages are type "text" AND no page has a font issue
+    - B: everything else
+
+    Args:
+        pages: List of PageInfo objects for every page in the document.
+
+    Returns:
+        "A", "B", or "C".
+    """
+    if not pages:
+        return "C"
+    total = len(pages)
+    image_pages = sum(1 for p in pages if p.page_type == "image")
+    if image_pages / total > 0.5:
+        return "C"
+    if all(p.page_type == "text" and not p.font_issue for p in pages):
+        return "A"
+    return "B"
