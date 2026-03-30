@@ -63,6 +63,6 @@ def test_page_map_construction():
 
 
 def test_page_map_producer_none():
-    page = PageInfo(1, "text", True, 0, False, "x" * 150)
+    page = PageInfo(page_number=1, page_type="text", has_selectable_text=True, image_count=0, font_issue=False, text_sample="x" * 150)
     pm = PageMap(total_pages=1, file_format="pdf", quality_tier="A", pages=[page], producer=None)
     assert pm.producer is None
