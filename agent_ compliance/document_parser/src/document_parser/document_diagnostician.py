@@ -198,35 +198,33 @@ def _inspect_pdf(path: Path) -> PageMap:
     """
     import fitz  # local import keeps module importable without fitz installed
 
-    doc = fitz.open(str(path))
-    producer: str | None = doc.metadata.get("producer") or None
-
     pages_info: list[PageInfo] = []
-    for i, page in enumerate(doc, start=1):
-        page_text = page.get_text()
-        images = page.get_images()
-        image_count = len(images)
+    with fitz.open(str(path)) as doc:
+        producer: str | None = (doc.metadata or {}).get("producer") or None
 
-        # font_issue: non-base14 font without embedded stream
-        fonts = page.get_fonts(full=False)
-        font_issue = any(
-            f[0] != 0 and f[1] == ""  # real font object (xref != 0), not embedded (ext == "")
-            for f in fonts
-        )
+        for i, page in enumerate(doc, start=1):
+            page_text = page.get_text()
+            images = page.get_images()
+            image_count = len(images)
 
-        page_type = classify_page_type(page_text, image_count, font_issue)
-        has_selectable = len(page_text.strip()) > 0
+            # font_issue: font has a PDF object (any xref) but no embedded stream.
+            # base-14 built-ins (Helvetica, Times, Courier…) have ext == 'n/a', NOT ''.
+            # Truly non-embedded non-standard fonts have ext == '' — these risk garbled text.
+            fonts = page.get_fonts(full=False)
+            font_issue = any(f[1] == "" for f in fonts)
 
-        pages_info.append(PageInfo(
-            page_number=i,
-            page_type=page_type,
-            has_selectable_text=has_selectable,
-            image_count=image_count,
-            font_issue=font_issue,
-            text_sample=page_text[:200],
-        ))
+            page_type = classify_page_type(page_text, image_count, font_issue)
+            has_selectable = len(page_text.strip()) > 0
 
-    doc.close()
+            pages_info.append(PageInfo(
+                page_number=i,
+                page_type=page_type,
+                has_selectable_text=has_selectable,
+                image_count=image_count,
+                font_issue=font_issue,
+                text_sample=page_text[:200],
+            ))
+
     quality_tier = assign_quality_tier(pages_info)
 
     return PageMap(
