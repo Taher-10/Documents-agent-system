@@ -12,8 +12,8 @@
 |---|---|---|---|
 | M6 — Data models | `src/document_parser/parsed_document.py` | ✅ Done | 25/25 passing |
 | M1 — Diagnostician | `src/document_parser/document_diagnostician.py` | ✅ Done | 33/33 passing |
-| M2-TierA — PDF extractor | `src/document_parser/extractors/tier_a.py` | ⬜ Not started | — |
-| M2-DOCX — DOCX extractor | `src/document_parser/extractors/docx.py` | ⬜ Not started | — |
+| M2-TierA — PDF extractor | `src/document_parser/extractors/tier_a.py` | ✅ Done | 5/5 passing |
+| M2-DOCX — DOCX extractor | `src/document_parser/extractors/docx.py` | ✅ Done | 7/7 passing |
 | M3 — Text cleaner | `src/document_parser/text_cleaner.py` | ⬜ Not started | — |
 | M4-regex — Section segmenter (regex path) | `src/document_parser/section_segmenter.py` | ⬜ Not started | — |
 | M4-LLM — Section segmenter (LLM fallback) | `src/document_parser/section_segmenter.py` | ⬜ Not started | — |
@@ -53,7 +53,7 @@
 - `from __future__ import annotations` used for forward-ref compatibility with Python 3.12.
 
 ### Test file
-`tests/test_parsed_document.py` — 25 tests, all passing
+`tests/test_parsed_document.py` — 28 tests, all passing (25 original + 3 `TestRawPageText` added in M2-TierA)
 
 ---
 
@@ -81,9 +81,60 @@
 
 ---
 
-## Upcoming: M2-TierA — PDF Extractor
+## M2-TierA — PDF Extractor `extractors/tier_a.py` ✅
 
-**Goal:** Extract text and tables from clean (Tier A) PDFs using pdfplumber primary + fitz fallback.
+**Completed:** 2026-03-31
+
+### What was built
+- `RawPageText` dataclass added to `parsed_document.py` — shared data contract for all extractors: `page_number`, `text`, `tables: list[list[list[str]]]`, `extraction_method`, `confidence`
+- `extract_tier_a(path, page_map) -> list[RawPageText]` — opens pdfplumber + fitz as joint context managers, iterates `page_map.pages`
+- pdfplumber primary: `extract_text(x_tolerance=3, y_tolerance=3)` + `extract_tables()`, `None` cells normalised to `""`
+- fitz fallback: fires when stripped text < 50 chars; emits `UserWarning`; method set to `"fitz"`
+- `confidence=1.0` in all cases (both paths)
+- `RawPageText` re-exported from `__init__.py`
+
+### Decisions
+- Both pdfplumber and fitz opened in a single `with` statement to avoid repeated file I/O across pages
+- 50-char threshold (`_FITZ_FALLBACK_THRESHOLD`) extracted as a module-level constant
+- `stacklevel=2` on `UserWarning` so warning points at caller of `extract_tier_a`
+
+### Test file
+`tests/test_tier_a.py` — 5 tests, all passing
+- fitz fallback verified via `pytest.warns(UserWarning, match="falling back to fitz")`
+- confidence=1.0 asserted on both pdfplumber and fitz paths
+
+---
+
+---
+
+## M2-DOCX — DOCX Extractor `extractors/docx.py` ✅
+
+**Completed:** 2026-03-31
+
+### What was built
+- `extract_docx(path) -> list[RawPageText]` — XML body traversal via `doc.element.body`
+- Paragraphs: empty ones skipped; headings prefixed `##H{level}##` for M4 segmenter
+- Tables: stored structured in `RawPageText.tables` (list[list[list[str]]]) AND as flat cell dump in `RawPageText.text`
+- Entire document → single `RawPageText(page_number=1, extraction_method="docx", confidence=1.0)`
+- `extract_docx` re-exported from `extractors/__init__.py`
+
+### Decisions
+- XML body traversal (not `doc.paragraphs` + `doc.tables`) preserves interleaved paragraph/table order — critical for QHSE docs where header table is at top, record-form table is at bottom
+- Flat table dump in `text` keeps cell content visible to M3/M4 until LLM table-to-paragraph transformation is added in a future step
+- Heading level parsed from style name suffix: `"Heading 2"` → `level=2`; `ValueError` fallback to `1` handles edge-case style names
+
+### Known limitations
+- Merged cells: python-docx repeats cell objects for horizontally merged cells → duplicate text in output
+- Heading detection is English-locale only (`style.name.startswith("Heading")`); French-locale Word uses "Titre 1" etc.
+
+### Test file
+`tests/test_docx.py` — 7 tests, all passing
+
+---
+
+## Upcoming: M3 — Text Cleaner
+
+**Goal:** Strip headers/footers, normalize encoding, tag diagram zones.
 
 ---
 
