@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import fitz
 import pytest
-
+from docx import Document
 
 @pytest.fixture()
 def pdf_path(tmp_path: Path) -> Path:
@@ -26,4 +26,24 @@ def pdf_path(tmp_path: Path) -> Path:
     out = tmp_path / "test.pdf"
     out.write_bytes(doc.tobytes())
     doc.close()
+    return out
+
+
+@pytest.fixture()
+def docx_path(tmp_path: Path) -> Path:
+    """DOCX with a Heading 1, Heading 2, a normal paragraph, and a 2x2 table."""
+    doc = Document()
+
+    doc.add_heading("Objet", level=1)
+    doc.add_heading("Domaine d'application", level=2)
+    doc.add_paragraph("Ce document décrit la procédure de gestion des gabarits.")
+
+    table = doc.add_table(rows=2, cols=2)
+    table.cell(0, 0).text = "Colonne A"
+    table.cell(0, 1).text = "Colonne B"
+    table.cell(1, 0).text = "Valeur 1"
+    table.cell(1, 1).text = "Valeur 2"
+
+    out = tmp_path / "test.docx"
+    doc.save(str(out))
     return out
