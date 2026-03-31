@@ -10,6 +10,21 @@ Heading paragraphs are prefixed with ##H{level}## for the M4 segmenter.
 Table cells are stored structured in RawPageText.tables AND as a flat
 text dump in RawPageText.text (for M3/M4 visibility until LLM table
 transformation is implemented).
+
+Implementation notes:
+- `Paragraph(child, doc)` and `Table(child, doc)` use python-docx internal
+  constructors (not the public `doc.paragraphs`/`doc.tables` accessors). This
+  is intentional: iterating `doc.element.body` directly is the only way to
+  preserve the interleaved order of paragraphs and tables in XML document order.
+
+Known limitations:
+- Merged cells: python-docx repeats the same cell object for horizontally
+  merged cells. The flat text dump and `tables` field will contain duplicate
+  cell text for merged-cell tables (common in QHSE header tables).
+- Heading detection uses `style.name.startswith("Heading")`, which works for
+  English-locale Word files. French-locale installations name styles "Titre 1",
+  "Titre 2", etc. — these will be treated as normal paragraphs without a
+  ##H{n}## prefix.
 """
 
 from pathlib import Path
