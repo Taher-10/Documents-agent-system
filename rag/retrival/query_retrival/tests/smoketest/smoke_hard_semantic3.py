@@ -58,58 +58,160 @@ class TestCase:
 
 # ── Selected test cases ───────────────────────────────────────────────────────
 
+from dataclasses import dataclass
+from typing import List
+
+
+@dataclass
+class TestCase:
+    name: str
+    query: str
+    expected_any: List[str]
+    top_k_pass: int
+    difficulty: str
+    fmt: str
+
+
+# ── REAL DOCUMENT SECTION TESTS — Gestion des gabarits ──────────────────────
+
 TESTS: List[TestCase] = [
 
-# ── 03 ───────────────────────────────────────────────────────────────────────
-TestCase(
-    name="03. 4.3 Déclaration du domaine d'application – présent et documenté",
-    query=(
-        "La déclaration du domaine d'application de l'EQMS est la suivante : "
-        "'Notre Système de Management Environnemental et Qualité vise à soutenir "
-        "la conception et la prestation de services de nettoyage contractuels et "
-        "spécialisés depuis notre bureau de Cambridge.'\n"
-        "Cette déclaration satisfait-elle à la clause 4.3 de l'ISO 9001:2015 ?"
+    TestCase(
+        name="1. Objet - gestion et optimisation des gabarits",
+        query=(
+            "L'objet de cette procédure est la maîtrise et l'optimisation de la gestion "
+            "des gabarits de tout type. Ils peuvent être fournis par le client ou conçus en interne."
+        ),
+        expected_any=["8.5.1", "8.5.3"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="full_section_real_doc",
     ),
-    expected_any=["4.3"],
-    top_k_pass=10,
-    difficulty="easy",
-    fmt="paragraph_conformity",
-),
 
-# ── 43 ───────────────────────────────────────────────────────────────────────
-TestCase(
-    name="43. 8.5.3 Correction actionnable – ajout d'une section propriété client",
-    query=(
-        "Générez une correction actionnable pour la section 8.5.3 manquante. "
-        "Incluez : (1) le texte de section proposé, (2) l'emplacement d'insertion "
-        "dans le manuel, (3) les sections existantes devant le référencer, "
-        "(4) les enregistrements à créer."
+    TestCase(
+        name="2. Description de la procédure - création maintien identification",
+        query=(
+            "Cette procédure décrit comment créer, vérifier, et maintenir les gabarits en très bon état. "
+            "Elle décrit aussi comment s'assurer que les gabarits sont correctement identifiés et mis à "
+            "disposition à leur point d'utilisation."
+        ),
+        expected_any=["8.5.1", "8.5.2", "8.5.4", "7.1.5"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="full_section_real_doc",
     ),
-    expected_any=["8.5.3"],
-    top_k_pass=10,
-    difficulty="expert",
-    fmt="recommendation_request",
-),
 
-# ── 46 ───────────────────────────────────────────────────────────────────────
-TestCase(
-    name="46. 8.1 / 7.5.2 Procédure non datée, sans responsable (NC)",
-    query=(
-        "Procédure : Nettoyage des locaux sensibles\n\n"
-        "Le nettoyage des locaux sensibles (salles blanches, laboratoires) "
-        "doit être effectué selon un protocole strict. Les produits utilisés "
-        "doivent être conformes aux spécifications. Un contrôle visuel est "
-        "réalisé après chaque intervention.\n\n"
-        "Évaluer ce document par rapport aux exigences de maîtrise "
-        "opérationnelle (ISO 9001 clause 8.1) et d'information documentée "
-        "(clause 7.5.2)."
+    TestCase(
+        name="3. Domaine d'application - unités et services concernés",
+        query=(
+            "Cette procédure s'applique aux unités et services de production, "
+            "Indus / méthodes et contrôles."
+        ),
+        expected_any=["4.3", "8.5.1"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="full_section_real_doc",
     ),
-    expected_any=["8.1", "7.5.2"],
-    top_k_pass=10,
-    difficulty="expert",
-    fmt="paragraph_non_conformity",
-),
 
+    TestCase(
+        name="4. Définitions - procédure et gabarit",
+        query=(
+            "Procédure : Manière spécifiée d'effectuer une activité ou un processus. "
+            "Gabarit : un moyen de contrôle ou de fabrication permettant d'éliminer les "
+            "risques de nonconformité des produits et des opérations."
+        ),
+        expected_any=["8.5.1", "7.1.5"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="full_section_real_doc",
+    ),
+
+    TestCase(
+        name="5. Références - registres et processus liés",
+        query=(
+            "Registre des Gabarits sur QALITAS, registre des gabarits de JEHIER, "
+            "processus Méthodes et industrialisation, processus Planification et suivi Production."
+        ),
+        expected_any=["7.5", "8.5.1"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="full_section_real_doc",
+    ),
+
+    TestCase(
+        name="6. Description générale - QALITAS Excel et identification",
+        query=(
+            "La gestion des gabarits se fait sur QALITAS pour les gabarits hors JEHIER. "
+            "Pour les gabarits de JEHIER, la gestion se fait sur un fichier Excel géré par "
+            "le Responsable Atelier JEHIER. Les gabarits des clients sont identifiés par des "
+            "codes fournis par les clients. Les gabarits internes, conçus et fabriqués par "
+            "l'entreprise, sont identifiés par le service méthodes et communiqués au service qualité."
+        ),
+        expected_any=["7.5", "8.5.2", "8.5.3"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="full_section_real_doc",
+    ),
+
+    TestCase(
+        name="7. Gestion des gabarits externes clients - section complète",
+        query=(
+            "A la réception d'un nouveau gabarit d'un client [Hors JEHIER], le Responsable "
+            "Méthodes / Industrialisation désigné communique l'information au Responsable qualité. "
+            "Ce dernier l'enregistre sur QALITAS. Il doit obligatoirement renseigner au minimum "
+            "les champs : [Propriétaire, la date de réception, l'état à la réception, la catégorie, "
+            "Le responsable des interventions, l'emplacement de référence]. Le Responsable Méthodes / "
+            "Industrialisation désigné doit valider le gabarit en le vérifiant par rapport aux exigences "
+            "client [spécifications techniques des produits, plans] et par rapport à son état à la réception "
+            "[Exploitable / Utilisable, référencé, Complet]. Le gabarit est mis à la disposition dans "
+            "l'emplacement de référence. Le Responsable Qualité désigné doit planifier les interventions "
+            "de vérification du gabarit sur QALITAS, en spécifiant le responsable, les dates prévues et "
+            "la fréquence semestrielle des vérifications. Une étiquette d'identification doit accompagner "
+            "le gabarit tout au long de son utilisation dans les postes de travail. Selon la fréquence de "
+            "vérification, le Responsable Qualité doit vérifier le gabarit et mettre à jour son état sur "
+            "QALITAS. En cas de perte, endommagement, besoin de modification ou changement du gabarit, "
+            "le responsable désigné doit envoyer un mail au client pour la réception d'un nouveau gabarit. "
+            "On ne pourra utiliser le gabarit sans dérogation explicite de la part du client. A la réception "
+            "d'un gabarit de remplacement, l'ancien est désactivé sur QALITAS. L'ancien gabarit est identifié "
+            "par une étiquette portant la mention PERIME et il sera aussitôt isolé. Il ne pourra être détruit "
+            "sans l'accord et l'information du client. Chaque trois ans, un inventaire des gabarits non conformes "
+            "des clients est assuré et le client est contacté pour destruction ou renvoi."
+        ),
+        expected_any=["7.5", "7.1.5", "8.5.1", "8.5.2", "8.5.3", "8.5.4"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="full_section_real_doc",
+    ),
+
+    TestCase(
+        name="8. Gestion des gabarits internes - section complète",
+        query=(
+            "Le Responsable Méthodes / Industrialisation désigné fait la conception du gabarit "
+            "pour la réalisation du produit conformément aux exigences du client ainsi que pour "
+            "le contrôle final. Il identifie le gabarit par un code interne communiqué au responsable "
+            "qualité. L'enregistrement sur QALITAS se fait par le Responsable Qualité avec les champs "
+            "obligatoires : propriétaire, date de fabrication, état à la fabrication, catégorie, "
+            "responsable des interventions et emplacement de référence. Le Responsable Méthodes / "
+            "Industrialisation valide le gabarit par rapport aux exigences client ou internes et à son "
+            "état à la fabrication. Le gabarit est mis à disposition dans l'emplacement de référence. "
+            "Une fois validé, le Responsable Qualité planifie les interventions de vérification du "
+            "gabarit sur QALITAS avec responsable, dates prévues et fréquence semestrielle. En parallèle, "
+            "il effectue chaque mois une vérification tournante pour s'assurer que les gabarits, qu'ils "
+            "soient utilisés ou non, sont bien présents et rangés à leur place. Une étiquette d'identification "
+            "accompagne le gabarit tout au long de son utilisation. Selon la fréquence de vérification, "
+            "le Responsable Qualité désigné doit vérifier le gabarit et mettre à jour son état sur QALITAS. "
+            "En cas de perte, endommagement, besoin de modification ou changement du gabarit, un autre gabarit "
+            "doit être élaboré et la nouvelle conception redéclenche les étapes décrites. On ne pourra utiliser "
+            "le gabarit sans dérogation explicite du Responsable Méthodes / Industrialisation et / ou du "
+            "Directeur Production. A la fabrication d'un gabarit de remplacement, l'ancien est désactivé sur "
+            "QALITAS. L'ancien gabarit non conforme est identifié par une étiquette portant la mention PERIME "
+            "et il sera aussitôt isolé. Il ne pourra être détruit sans l'accord du Directeur de Production."
+        ),
+        expected_any=["7.5", "7.1.5", "8.5.1", "8.5.2", "8.5.4"],
+        top_k_pass=10,
+        difficulty="hard",
+        fmt="full_section_real_doc",
+    ),
 ]
 
 
