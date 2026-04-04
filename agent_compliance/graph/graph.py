@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from .nodes import (
     assess_quality_node,
+    classify_sections_node,
     extract_sections_node,
+    fetch_metadata_node,
     handle_error_node,
+    human_review_node,
     parse_document_node,
     validate_input,
 )
@@ -24,14 +28,34 @@ def _route_after_sections(state: AgentState) -> str:
     return "handle_error" if state.get("error") else "assess_quality"
 
 
-def build_graph() -> StateGraph:
+def _route_after_quality(state: AgentState) -> str:
+    if state.get("error"):
+        return "handle_error"
+    if state.get("low_quality_flag"):
+        return "human_review"
+    return "fetch_metadata"
+
+
+def _route_after_human_review(state: AgentState) -> str:
+    return "handle_error" if state.get("error") else "fetch_metadata"
+
+
+def build_graph(checkpointer: InMemorySaver | None = None) -> StateGraph:
+    if checkpointer is None:
+        checkpointer = InMemorySaver()
     return (
         StateGraph(AgentState)
+        # V1 nodes
         .add_node("validate_input", validate_input)
         .add_node("parse_document", parse_document_node)
         .add_node("extract_sections", extract_sections_node)
         .add_node("assess_quality", assess_quality_node)
         .add_node("handle_error", handle_error_node)
+        # V2 nodes
+        .add_node("human_review", human_review_node)
+        .add_node("fetch_metadata", fetch_metadata_node)
+        .add_node("classify_sections", classify_sections_node)
+        # Edges — V1
         .add_edge(START, "validate_input")
         .add_conditional_edges(
             "validate_input",
@@ -48,9 +72,21 @@ def build_graph() -> StateGraph:
             _route_after_sections,
             ["assess_quality", "handle_error"],
         )
-        .add_edge("assess_quality", END)
+        # Edges — V2
+        .add_conditional_edges(
+            "assess_quality",
+            _route_after_quality,
+            ["human_review", "fetch_metadata", "handle_error"],
+        )
+        .add_conditional_edges(
+            "human_review",
+            _route_after_human_review,
+            ["fetch_metadata", "handle_error"],
+        )
+        .add_edge("fetch_metadata", "classify_sections")
+        .add_edge("classify_sections", END)
         .add_edge("handle_error", END)
-        .compile()
+        .compile(checkpointer=checkpointer)
     )
 
 

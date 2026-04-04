@@ -16,7 +16,9 @@ class AgentState(TypedDict):
     quality_tier: str | None          # "A", "B", or "C"
     min_confidence: float | None
     low_quality_flag: bool
+    registry_metadata: dict[str, Any]  # fetched from documents_system.db; {} if not found
+    document_scope: Any | None         # merged RetrievalScope for the whole document (each section carries its own .scope)
 
     # --- Control ---
     error: str | None
-    status: str                        # "pending" | "validated" | "parsed" | "sectioned" | "done" | "error"
+    status: str                        # "pending" | "validated" | "parsed" | "sectioned" | "classified" | "done" | "error"

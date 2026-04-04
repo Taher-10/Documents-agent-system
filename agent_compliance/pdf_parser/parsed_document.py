@@ -6,10 +6,13 @@ parsed_document.py — M6: Core data models for the QHSE document parser.
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    from agent_compliance.classification.models import RetrievalScope
 
 
 # ---------------------------------------------------------------------------
@@ -80,17 +83,30 @@ class ParsedSection:
     extraction_confidence: float
     visual_ref: str | None = None
     heading_level: int = 1
+    scope: Any | None = field(default=None)  # RetrievalScope, enriched by classify_sections_node
 
     def to_dict(self) -> dict:
         """Serialize to a plain dict (JSON-safe)."""
-        d = asdict(self)
-        d["section_type"] = self.section_type.value
-        d["page_range"] = list(self.page_range)
-        return d
+        return {
+            "id": self.id,
+            "section_type": self.section_type.value,
+            "title": self.title,
+            "raw_text": self.raw_text,
+            "page_range": list(self.page_range),
+            "extraction_confidence": self.extraction_confidence,
+            "visual_ref": self.visual_ref,
+            "heading_level": self.heading_level,
+            "scope": self.scope.model_dump() if self.scope is not None else None,
+        }
 
     @classmethod
     def from_dict(cls, d: dict) -> "ParsedSection":
-        """Deserialize from a plain dict produced by to_dict()."""
+        """Deserialize from a plain dict produced by to_dict().
+
+        Note: ``scope`` is a live runtime enrichment and is not reconstructed
+        from JSON — it defaults to None and is repopulated by the graph node.
+        """
+        d.pop("scope", None)
         return cls(
             id=d["id"],
             section_type=SectionType(d["section_type"]),
