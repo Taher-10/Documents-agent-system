@@ -12,7 +12,7 @@ Pipeline (in order):
 Public API
 ----------
     RetrievalService(embedder, qdrant, reranker, collection, top_k, top_k_rerank)
-    await service.retrieve(query, norm_filter, language, top_k, top_k_rerank) -> List[RetrievedChunk]
+    await service.retrieve(query, norm_filter, language, top_k, top_k_rerank, clause_families, specific_clauses) -> List[RetrievedChunk]
     await service.close()
 """
 
@@ -54,15 +54,21 @@ class RetrievalService:
         language: str,
         top_k: int | None = None,
         top_k_rerank: int | None = None,
+        clause_families: List[str] = [],
+        specific_clauses: List[str] = [],
     ) -> List[RetrievedChunk]:
         """Run the full retrieval pipeline and return top reranked chunks.
 
         Args:
-            query:         Raw user query string.
-            norm_filter:   Non-empty list of norm IDs to restrict search (e.g. ["ISO9001"]).
-            language:      "EN" or "FR".
-            top_k:         Candidate pool size for retriever. Overrides instance default.
-            top_k_rerank:  Number of chunks to return after reranking. Overrides instance default.
+            query:            Raw user query string.
+            norm_filter:      Non-empty list of norm IDs to restrict search (e.g. ["ISO9001"]).
+            language:         "EN" or "FR".
+            top_k:            Candidate pool size for retriever. Overrides instance default.
+            top_k_rerank:     Number of chunks to return after reranking. Overrides instance default.
+            clause_families:  Optional top-level clause families for hard Qdrant filter
+                              (e.g. ["8"] matches all of 8, 8.1, 8.5.1, …).
+            specific_clauses: Optional sub-clause IDs for soft BM25 token boost
+                              (e.g. ["8.5"] injects "8" and "5" into the token set).
 
         Returns:
             List of RetrievedChunk sorted by rerank_score descending, length <= top_k_rerank.
@@ -75,7 +81,7 @@ class RetrievalService:
         effective_top_k_rerank = top_k_rerank if top_k_rerank is not None else self._top_k_rerank
 
         # Step 1 — transform (sync)
-        tq = transform(query, norm_filter, language)
+        tq = transform(query, norm_filter, language, clause_families, specific_clauses)
 
         # Step 2 — hybrid retrieve (async)
         chunks = await self._retriever.retrieve(

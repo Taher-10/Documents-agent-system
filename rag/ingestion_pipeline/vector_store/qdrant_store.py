@@ -281,6 +281,7 @@ class VectorStoreManager:
             "norm_full":           chunk.norm_full,
             "norm_version":        chunk.norm_version,
             "clause_number":       chunk.clause_number,
+            "clause_family":       chunk.clause_family,
             "clause_title":        chunk.clause_title,
             "parent_clause":       chunk.parent_clause,
             "page_number":         chunk.page_number,

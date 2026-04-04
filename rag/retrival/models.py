@@ -22,6 +22,8 @@ class TransformedQuery:
 
     norm_filter: List[str]  # raw norm IDs passed to transform(), preserved for diagnostics
 
+    clause_families: List[str] = field(default_factory=list)  # clause families used in filter, preserved for diagnostics
+
 
 @dataclass
 class RetrievedChunk:

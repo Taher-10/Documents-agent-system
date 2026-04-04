@@ -57,7 +57,11 @@ def augment_bm25_tokens(base_tokens: List[str], iso_hits: List[str]) -> List[str
 # Norm filter builder
 # ---------------------------------------------------------------------------
 
-def build_norm_filter(norm_filter: List[str], language: str = "EN") -> Filter:
+def build_norm_filter(
+    norm_filter: List[str],
+    language: str = "EN",
+    clause_families: List[str] = [],
+) -> Filter:
     """
     Build a Qdrant ``Filter`` that restricts search to the requested norm(s)
     and the specified language.
@@ -72,12 +76,19 @@ def build_norm_filter(norm_filter: List[str], language: str = "EN") -> Filter:
         ``"EN"`` (default) or ``"FR"``.  Appended as a ``must`` condition on
         the ``language`` payload field so Qdrant only scores chunks in the
         correct language.
+    clause_families:
+        Optional top-level clause family IDs (e.g. ``["8"]``).  When
+        non-empty, a ``must`` condition on ``clause_family`` is appended so
+        Qdrant restricts results to chunks whose ``clause_number`` belongs to
+        any of the specified families (e.g. "8", "8.1", "8.5.1" all share
+        family "8").  Empty list → no clause filter applied.
 
     Returns
     -------
     Filter
-        A ``must`` filter combining ``norm_id`` and ``language`` conditions.
-        Single standard → ``MatchValue``; multiple → ``MatchAny``.
+        A ``must`` filter combining ``norm_id``, ``language``, and optionally
+        ``clause_family`` conditions.
+        Single value → ``MatchValue``; multiple → ``MatchAny``.
 
     Raises
     ------
@@ -92,10 +103,20 @@ def build_norm_filter(norm_filter: List[str], language: str = "EN") -> Filter:
     else:
         match = MatchAny(any=norm_filter)
 
-    return Filter(must=[
+    conditions = [
         FieldCondition(key="norm_id", match=match),
         FieldCondition(key="language", match=MatchValue(value=language)),
-    ])
+    ]
+
+    if clause_families:
+        family_match = (
+            MatchValue(value=clause_families[0])
+            if len(clause_families) == 1
+            else MatchAny(any=clause_families)
+        )
+        conditions.append(FieldCondition(key="clause_family", match=family_match))
+
+    return Filter(must=conditions)
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +127,8 @@ def transform(
     query_text: str,
     norm_filter: List[str],
     language: str = "EN",
+    clause_families: List[str] = [],
+    specific_clauses: List[str] = [],
 ) -> TransformedQuery:
     """
     Full pipeline entry point — orchestrates vocabulary scan and BM25 augmentation.
@@ -113,7 +136,7 @@ def transform(
     Steps:
     1. Build the Qdrant norm filter (raises ``ValueError`` if empty).
     2. Scan the query text for ISO vocabulary.
-    3. Tokenise and augment BM25 tokens.
+    3. Tokenise and augment BM25 tokens (injecting specific_clauses as soft boost).
     4. Return a ``TransformedQuery``.
 
     Parameters
@@ -125,24 +148,39 @@ def transform(
     language:
         ``"EN"`` (default) or ``"FR"``.  Determines the ISO vocabulary used
         for scanning and the Qdrant language filter.
+    clause_families:
+        Optional top-level clause family IDs (e.g. ``["8"]``).  When
+        non-empty, a hard Qdrant filter on ``clause_family`` is added — only
+        chunks belonging to these families are returned.  All children are
+        included automatically (e.g. "8" matches "8.1", "8.5.1", etc.).
+        Empty list → no clause filter (default behaviour).
+    specific_clauses:
+        Optional sub-clause IDs for soft BM25 boosting (e.g. ``["8.5"]``).
+        These are injected into the BM25 token set using the same digit-split
+        convention as the rest of the pipeline ("8.5" → ["8", "5"]), boosting
+        sparse recall without imposing a hard filter.
+        Empty list → no boost (default behaviour).
 
     Returns
     -------
     TransformedQuery
     """
-    # 1. Norm filter (fast, raises on empty list)
-    qdrant_filter = build_norm_filter(norm_filter, language)
+    # 1. Norm filter (fast, raises on empty list); clause_families added when present
+    qdrant_filter = build_norm_filter(norm_filter, language, clause_families)
 
     # 2. ISO vocabulary scan
     iso_vocab_hits = scan_iso_vocabulary(query_text, language, norm_filter)
 
-    # 3. BM25 tokens
+    # 3. BM25 tokens — merge iso hits + specific_clauses for soft boosting
     clause_hit = CLAUSE_PATTERN.search(query_text)
     base_tokens = tokenize_for_bm25(
         text=query_text,
         clause_ref=clause_hit.group(0) if clause_hit else None,
     )
-    bm25_tokens = augment_bm25_tokens(base_tokens, iso_vocab_hits)
+    # specific_clauses are treated as clause-number hits so augment_bm25_tokens
+    # expands "8.5" → ["8", "5"] via the CLAUSE_PATTERN fullmatch branch.
+    combined_hits = iso_vocab_hits + list(specific_clauses)
+    bm25_tokens = augment_bm25_tokens(base_tokens, combined_hits)
 
     # 4. Assemble result
     # "search_query:" instruction prefix required by nomic-embed-text to route
@@ -158,4 +196,5 @@ def transform(
         original_query=query_text,
         language=language,
         norm_filter=norm_filter,
+        clause_families=list(clause_families),
     )

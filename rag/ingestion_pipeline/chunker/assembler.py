@@ -538,12 +538,15 @@ def assemble_norm_chunks(
             related_clauses = _detect_cross_refs(part_text)
             token_count     = len(part_text.split())
 
+            clause_family = span.clause_id.split(".")[0] if span.clause_id.strip() else ""
+
             chunks.append(NormChunk(
                 chunk_id=chunk_id,
                 norm_id=norm_id,
                 norm_full=norm_full,
                 norm_version=norm_version,
                 clause_number=span.clause_id,
+                clause_family=clause_family,
                 clause_title=span.title,
                 parent_clause=parent_clause,
                 page_number=first_page,

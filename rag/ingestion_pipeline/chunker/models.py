@@ -98,6 +98,7 @@ class NormChunk:
     norm_full: str
     norm_version: str
     clause_number: str
+    clause_family: str  # top-level prefix of clause_number, e.g. "8" for "8.5.1"
     clause_title: str
     parent_clause: str
     page_number: int
