@@ -31,23 +31,27 @@ OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
 OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 
-async def chat_complete(prompt: str, max_tokens: int = 150) -> str:
+async def chat_complete(prompt: str, max_tokens: int = 150, timeout: int = 30) -> str:
     """
     Single-turn chat completion. Returns the model's response text.
 
     Raises on any failure — callers are responsible for retry/timeout logic.
     Provider is selected by the LLM_PROVIDER env var at import time.
+
+    Args:
+        timeout: HTTP request timeout in seconds (default 30). Increase for
+                 large prompts that require more generation time.
     """
     if LLM_PROVIDER == "openai":
         return await _openai_complete(prompt, max_tokens)
-    return await _ollama_complete(prompt, max_tokens)
+    return await _ollama_complete(prompt, max_tokens, timeout)
 
 
 # ---------------------------------------------------------------------------
 # Ollama
 # ---------------------------------------------------------------------------
 
-def _ollama_request(prompt: str, max_tokens: int) -> str:
+def _ollama_request(prompt: str, max_tokens: int, timeout: int = 30) -> str:
     """Synchronous Ollama /api/chat call — run via asyncio.to_thread."""
     import requests  # noqa: PLC0415  (deferred; not everyone has this path)
 
@@ -62,14 +66,14 @@ def _ollama_request(prompt: str, max_tokens: int) -> str:
             "stop": ["\n\n", "Alternatively", "Here is", "Option "],
         },
     }
-    response = requests.post(url, json=payload, timeout=30)
+    response = requests.post(url, json=payload, timeout=timeout)
     response.raise_for_status()
     data: dict[str, Any] = response.json()
     return data["message"]["content"].strip()
 
 
-async def _ollama_complete(prompt: str, max_tokens: int) -> str:
-    return await asyncio.to_thread(_ollama_request, prompt, max_tokens)
+async def _ollama_complete(prompt: str, max_tokens: int, timeout: int = 30) -> str:
+    return await asyncio.to_thread(_ollama_request, prompt, max_tokens, timeout)
 
 
 # ---------------------------------------------------------------------------

@@ -25,4 +25,4 @@ class AgentState(TypedDict):
 
     # --- Control ---
     error: str | None
-    status: str                        # "pending" | "validated" | "parsed" | "sectioned" | "classified" | "retrieved" | "done" | "error"
+    status: str                        # "pending" | "validated" | "parsed" | "sectioned" | "classified" | "sections_filtered" | "retrieved" | "done" | "error"

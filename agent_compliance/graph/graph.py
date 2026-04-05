@@ -16,6 +16,7 @@ from .nodes import (
     validate_input,
 )
 from .retrieve_node import make_retrieve_node
+from .sections_llm import sections_llm_node
 from .state import AgentState
 
 
@@ -73,7 +74,8 @@ def build_graph(
         .add_node("human_review", human_review_node)
         .add_node("fetch_metadata", fetch_metadata_node)
         .add_node("classify_sections", classify_sections_node)
-        # V3 node — retrieval orchestrator
+        # V3 nodes — LLM section filter + retrieval orchestrator
+        .add_node("sections_llm", sections_llm_node)
         .add_node("retrieve", retrieve_fn)
         # Edges — V1
         .add_edge(START, "validate_input")
@@ -105,7 +107,8 @@ def build_graph(
         )
         .add_edge("fetch_metadata", "classify_sections")
         # Edges — V3
-        .add_edge("classify_sections", "retrieve")
+        .add_edge("classify_sections", "sections_llm")
+        .add_edge("sections_llm", "retrieve")
         .add_conditional_edges("retrieve", _route_after_retrieve, ["handle_error", END])
         .add_edge("handle_error", END)
         .compile(checkpointer=checkpointer)
