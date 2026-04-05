@@ -10,7 +10,7 @@ import os
 
 OLLAMA_BASE_URL: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_EMBED_ENDPOINT: str = f"{OLLAMA_BASE_URL}/api/embeddings"
-OLLAMA_EMBED_MODEL: str = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+OLLAMA_EMBED_MODEL: str = os.getenv("OLLAMA_EMBED_MODEL", "qwen3-embedding:0.6b")
 
 EMBED_BATCH_SIZE: int = int(os.getenv("EMBED_BATCH_SIZE", "50"))
 

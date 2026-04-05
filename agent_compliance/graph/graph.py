@@ -3,6 +3,8 @@ from __future__ import annotations
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 
+from rag.retrival import RetrievalService
+
 from .nodes import (
     assess_quality_node,
     classify_sections_node,
@@ -13,6 +15,7 @@ from .nodes import (
     parse_document_node,
     validate_input,
 )
+from .retrieve_node import make_retrieve_node
 from .state import AgentState
 
 
@@ -40,9 +43,24 @@ def _route_after_human_review(state: AgentState) -> str:
     return "handle_error" if state.get("error") else "fetch_metadata"
 
 
-def build_graph(checkpointer: InMemorySaver | None = None) -> StateGraph:
+def _route_after_retrieve(state: AgentState) -> str:
+    return "handle_error" if state.get("error") else END
+
+
+def build_graph(
+    checkpointer: InMemorySaver | None = None,
+    retrieval_service: RetrievalService | None = None,
+) -> StateGraph:
     if checkpointer is None:
         checkpointer = InMemorySaver()
+
+    if retrieval_service is None:
+        async def _noop_retrieve(state: AgentState) -> dict:
+            return {"section_retrievals": [], "status": "retrieved"}
+        retrieve_fn = _noop_retrieve
+    else:
+        retrieve_fn = make_retrieve_node(retrieval_service)
+
     return (
         StateGraph(AgentState)
         # V1 nodes
@@ -55,6 +73,8 @@ def build_graph(checkpointer: InMemorySaver | None = None) -> StateGraph:
         .add_node("human_review", human_review_node)
         .add_node("fetch_metadata", fetch_metadata_node)
         .add_node("classify_sections", classify_sections_node)
+        # V3 node — retrieval orchestrator
+        .add_node("retrieve", retrieve_fn)
         # Edges — V1
         .add_edge(START, "validate_input")
         .add_conditional_edges(
@@ -84,7 +104,9 @@ def build_graph(checkpointer: InMemorySaver | None = None) -> StateGraph:
             ["fetch_metadata", "handle_error"],
         )
         .add_edge("fetch_metadata", "classify_sections")
-        .add_edge("classify_sections", END)
+        # Edges — V3
+        .add_edge("classify_sections", "retrieve")
+        .add_conditional_edges("retrieve", _route_after_retrieve, ["handle_error", END])
         .add_edge("handle_error", END)
         .compile(checkpointer=checkpointer)
     )
