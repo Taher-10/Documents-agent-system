@@ -6,9 +6,18 @@ from typing import TYPE_CHECKING
 
 from .docling_parser import ParseResult
 from .parsed_document import ParsedSection, SectionType
+from ._page_ranges import (
+    _assign_page_ranges,
+    _assign_page_ranges_from_page_texts,
+    _extract_heading_page_candidates,
+    _normalize_heading_key,
+)
 
 if TYPE_CHECKING:
     from docling_core.types.doc.document import DoclingDocument
+
+# Module-level compiled regex constant used in _split_markdown_into_sections
+_RE_MD_HEADING = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
 
 
 def docling_to_sections(source: "DoclingDocument | ParseResult") -> list[ParsedSection]:
@@ -79,8 +88,7 @@ def _split_markdown_into_sections(markdown: str) -> list[ParsedSection]:
     if not markdown or not markdown.strip():
         return []
 
-    heading_pattern = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
-    matches = list(heading_pattern.finditer(markdown))
+    matches = list(_RE_MD_HEADING.finditer(markdown))
 
     if not matches:
         body = markdown.strip()
@@ -326,152 +334,6 @@ def _extract_total_pages(doc: "DoclingDocument") -> int:
     except TypeError:
         return 1
     return max(1, int(count))
-
-
-def _extract_heading_page_candidates(doc: "DoclingDocument") -> list[tuple[str, int]]:
-    candidates: list[tuple[str, int]] = []
-    iterate_items = getattr(doc, "iterate_items", None)
-    if not callable(iterate_items):
-        return candidates
-
-    try:
-        raw_iter = iterate_items()
-    except Exception:
-        return candidates
-
-    for entry in raw_iter:
-        item = entry[0] if isinstance(entry, tuple) else entry
-        page_no = _get_first_page_no(item)
-        if page_no is None or not _is_heading_like(item):
-            continue
-
-        key = _normalize_heading_key(_get_item_heading_text(item))
-        if key:
-            candidates.append((key, page_no))
-    return candidates
-
-
-def _assign_page_ranges(
-    sections: list[ParsedSection],
-    heading_candidates: list[tuple[str, int]],
-    total_pages: int,
-) -> None:
-    starts: list[int] = []
-    cursor = 0
-    last_start = 1
-
-    for section in sections:
-        title_key = _normalize_heading_key(section.title)
-        start_page = 1 if section.title.lower() == "preamble" else last_start
-
-        if title_key and section.title.lower() != "preamble":
-            for idx in range(cursor, len(heading_candidates)):
-                cand_key, cand_page = heading_candidates[idx]
-                if _heading_keys_match(title_key, cand_key):
-                    start_page = cand_page
-                    cursor = idx + 1
-                    break
-
-        start_page = max(last_start, start_page)
-        starts.append(start_page)
-        last_start = start_page
-
-    _apply_ranges_from_starts(sections, starts, total_pages)
-
-
-def _assign_page_ranges_from_page_texts(
-    sections: list[ParsedSection],
-    page_texts: list[str],
-    total_pages: int,
-) -> None:
-    if not sections:
-        return
-
-    normalized_pages = [_normalize_heading_key(text) for text in page_texts]
-    starts: list[int] = []
-    cursor = 0
-    last_start = 1
-
-    for section in sections:
-        title_key = _normalize_heading_key(section.title)
-        start_page = 1 if section.title.lower() == "preamble" else last_start
-
-        if title_key and section.title.lower() != "preamble":
-            for idx in range(cursor, len(normalized_pages)):
-                page_blob = normalized_pages[idx]
-                if title_key and title_key in page_blob:
-                    start_page = idx + 1
-                    cursor = idx
-                    break
-
-        start_page = max(last_start, start_page)
-        starts.append(start_page)
-        last_start = start_page
-
-    _apply_ranges_from_starts(sections, starts, total_pages)
-
-
-def _apply_ranges_from_starts(
-    sections: list[ParsedSection],
-    starts: list[int],
-    total_pages: int,
-) -> None:
-    for idx, section in enumerate(sections):
-        start_page = starts[idx] if idx < len(starts) else 1
-        if idx + 1 < len(starts):
-            end_page = max(start_page, starts[idx + 1] - 1)
-        else:
-            end_page = max(start_page, total_pages)
-        section.page_range = (start_page, end_page)
-
-
-def _get_first_page_no(item: object) -> int | None:
-    prov_entries = getattr(item, "prov", None) or []
-    for prov in prov_entries:
-        page_no = getattr(prov, "page_no", None)
-        if isinstance(page_no, int) and page_no >= 1:
-            return page_no
-    return None
-
-
-def _is_heading_like(item: object) -> bool:
-    label = getattr(item, "label", None)
-    label_name = (getattr(label, "name", None) or str(label)).upper()
-    if any(token in label_name for token in ("SECTION_HEADER", "TITLE", "HEADING")):
-        return True
-
-    text = _get_item_heading_text(item)
-    if not text:
-        return False
-    return bool(re.match(r"^\s*(\d+([.-]\d+)*)\s*[-.)]?\s+\S+", text))
-
-
-def _get_item_heading_text(item: object) -> str:
-    for attr in ("text", "title", "name"):
-        value = getattr(item, attr, None)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
-    return ""
-
-
-def _normalize_heading_key(text: str) -> str:
-    if not text:
-        return ""
-    normalized = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
-    normalized = normalized.lower()
-    normalized = re.sub(r"[`*_~#>\[\](){}]", " ", normalized)
-    normalized = re.sub(r"\s+", " ", normalized).strip()
-    normalized = re.sub(r"[^a-z0-9]+", " ", normalized)
-    normalized = re.sub(r"\s+", " ", normalized).strip()
-    return normalized
-
-
-def _heading_keys_match(section_key: str, candidate_key: str) -> bool:
-    if section_key == candidate_key:
-        return True
-    if section_key and candidate_key:
-        return section_key in candidate_key or candidate_key in section_key
-    return False
 
 
 def _extract_hint_titles(metadata: dict) -> list[str]:

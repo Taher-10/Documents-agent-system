@@ -1,15 +1,25 @@
 from __future__ import annotations
 
-import math
 import re
-from collections import Counter, defaultdict
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
+from ._cleanup import (
+    _normalize_spacing,
+    _remove_repeated_headers_footers,
+    _remove_repeated_lines_global,
+)
+
+# Module-level compiled regex constants used in _extract_page1_metadata_fields
+_RE_KV_INLINE   = re.compile(r"^([A-Za-zÀ-ÿ][^:]{1,40})\s*:\s*(.+)$")
+_RE_KV_KEY_ONLY = re.compile(r"^([A-Za-zÀ-ÿ][^:]{1,40})\s*:\s*$")
+
 
 @dataclass(slots=True)
 class ParseResult:
+    """Structured output returned by the parser for a single source document."""
     source_path: str
     text: str
     pages: int | None = None
@@ -108,7 +118,12 @@ def parse_pdf(
     return parse_document(pdf_path, remove_headers_footers=remove_headers_footers)
 
 
+# ---------------------------------------------------------------------------
+# Low-level Docling extraction helpers
+# ---------------------------------------------------------------------------
+
 def _extract_text(document: Any) -> str:
+    """Export the Docling document into a plain string, preferring markdown when available."""
     if hasattr(document, "export_to_markdown"):
         return document.export_to_markdown()
     if hasattr(document, "export_to_text"):
@@ -148,6 +163,7 @@ def _filter_furniture_native(document: Any) -> tuple[Any, int]:
 
 
 def _extract_page_texts(document: Any, fallback_text: str) -> list[str]:
+    """Build one text segment per page using Docling provenance, with text splitting as fallback."""
     try:
         from docling_core.types.doc import ContentLayer
 
@@ -192,6 +208,7 @@ def _iterate_items(
     document: Any,
     included_content_layers: set[Any] | None = None,
 ) -> Iterable[tuple[Any, Any]]:
+    """Yield Docling items in a normalized `(item, parent)` shape across API variants."""
     iterator = getattr(document, "iterate_items", None)
     if not callable(iterator):
         return []
@@ -215,6 +232,7 @@ def _iterate_items(
 
 
 def _get_item_page_numbers(item: Any) -> list[int]:
+    """Read page numbers from an item's provenance while preserving the original order."""
     prov_entries = getattr(item, "prov", None) or []
     page_nos: list[int] = []
     for prov_entry in prov_entries:
@@ -233,6 +251,7 @@ def _get_item_page_numbers(item: Any) -> list[int]:
 
 
 def _get_item_text(item: Any, document: Any | None = None) -> str:
+    """Extract displayable text from a Docling item using export helpers or the raw `text` field."""
     for attr in ("export_to_markdown", "export_to_text"):
         method = getattr(item, attr, None)
         if callable(method):
@@ -256,312 +275,12 @@ def _get_item_text(item: Any, document: Any | None = None) -> str:
     return ""
 
 
-def _remove_repeated_headers_footers(
-    page_texts: list[str],
-    probe_lines: int = 5,
-    min_ratio: float = 0.6,
-) -> tuple[list[str], list[str]]:
-    threshold = max(2, math.ceil(len(page_texts) * min_ratio))
-
-    stripped_pages = [
-        [line.strip() for line in page_text.splitlines() if line.strip()]
-        for page_text in page_texts
-    ]
-
-    header_counts: Counter[str] = Counter()
-    footer_counts: Counter[str] = Counter()
-    canonical_to_original: dict[str, str] = {}
-
-    for lines in stripped_pages:
-        if not lines:
-            continue
-
-        for line in lines[:probe_lines]:
-            canonical = _canonicalize_line(line)
-            if canonical:
-                header_counts[canonical] += 1
-                canonical_to_original.setdefault(canonical, line)
-
-        for line in lines[-probe_lines:]:
-            canonical = _canonicalize_line(line)
-            if canonical:
-                footer_counts[canonical] += 1
-                canonical_to_original.setdefault(canonical, line)
-
-    header_candidates = {k for k, v in header_counts.items() if v >= threshold}
-    footer_candidates = {k for k, v in footer_counts.items() if v >= threshold}
-
-    header_blocks = _find_repeated_blocks(
-        stripped_pages,
-        probe_lines=probe_lines,
-        threshold=threshold,
-        from_top=True,
-    )
-    footer_blocks = _find_repeated_blocks(
-        stripped_pages,
-        probe_lines=probe_lines,
-        threshold=threshold,
-        from_top=False,
-    )
-
-    if (
-        not header_candidates
-        and not footer_candidates
-        and not header_blocks
-        and not footer_blocks
-    ):
-        return page_texts, []
-
-    global_candidates = set(header_candidates) | set(footer_candidates)
-    for block in header_blocks + footer_blocks:
-        global_candidates.update(block)
-
-    cleaned_pages: list[str] = []
-    removed_lines: set[str] = set()
-
-    for lines in stripped_pages:
-        if not lines:
-            cleaned_pages.append("")
-            continue
-
-        top_cut = _top_cut_size(lines, probe_lines, header_candidates, header_blocks)
-        bottom_cut = _bottom_cut_size(
-            lines,
-            probe_lines,
-            footer_candidates,
-            footer_blocks,
-            already_cut_top=top_cut,
-        )
-
-        kept = lines[top_cut : len(lines) - bottom_cut if bottom_cut else len(lines)]
-        # In some docs, extraction order may interleave header/footer lines inside page text.
-        # Remove detected repeated candidates anywhere in the page segment as a final cleanup.
-        kept = [
-            line
-            for line in kept
-            if _canonicalize_line(line) not in global_candidates
-        ]
-        removed_lines.update(lines[:top_cut])
-        if bottom_cut:
-            removed_lines.update(lines[-bottom_cut:])
-        for line in lines:
-            if _canonicalize_line(line) in global_candidates and line not in kept:
-                removed_lines.add(line)
-
-        cleaned_pages.append("\n".join(kept).strip())
-
-    ordered_removed = _order_removed_lines(
-        removed_lines,
-        canonical_to_original,
-        header_candidates,
-        footer_candidates,
-        header_blocks,
-        footer_blocks,
-    )
-
-    return cleaned_pages, ordered_removed
-
-
-def _find_repeated_blocks(
-    stripped_pages: list[list[str]],
-    probe_lines: int,
-    threshold: int,
-    from_top: bool,
-) -> list[tuple[str, ...]]:
-    counts: Counter[tuple[str, ...]] = Counter()
-    for lines in stripped_pages:
-        if len(lines) < 2:
-            continue
-
-        candidate_lines = lines[:probe_lines] if from_top else lines[-probe_lines:]
-        canon = [_canonicalize_line(line) for line in candidate_lines]
-
-        for size in range(2, min(len(canon), probe_lines) + 1):
-            block = tuple(canon[:size] if from_top else canon[-size:])
-            if all(block):
-                counts[block] += 1
-
-    candidates = [block for block, count in counts.items() if count >= threshold]
-    candidates.sort(key=len, reverse=True)
-    return candidates
-
-
-def _top_cut_size(
-    lines: list[str],
-    probe_lines: int,
-    header_candidates: set[str],
-    header_blocks: list[tuple[str, ...]],
-) -> int:
-    max_scan = min(len(lines), probe_lines)
-    canonical = [_canonicalize_line(line) for line in lines[:max_scan]]
-
-    for block in header_blocks:
-        block_size = len(block)
-        if block_size <= len(canonical) and tuple(canonical[:block_size]) == block:
-            return block_size
-
-    cut = 0
-    while cut < max_scan:
-        if canonical[cut] and canonical[cut] in header_candidates:
-            cut += 1
-            continue
-        break
-    return cut
-
-
-def _bottom_cut_size(
-    lines: list[str],
-    probe_lines: int,
-    footer_candidates: set[str],
-    footer_blocks: list[tuple[str, ...]],
-    already_cut_top: int,
-) -> int:
-    remaining = lines[already_cut_top:]
-    max_scan = min(len(remaining), probe_lines)
-    if max_scan <= 0:
-        return 0
-
-    canonical_tail = [_canonicalize_line(line) for line in remaining[-max_scan:]]
-
-    for block in footer_blocks:
-        block_size = len(block)
-        if block_size <= len(canonical_tail) and tuple(canonical_tail[-block_size:]) == block:
-            return block_size
-
-    cut = 0
-    idx = len(canonical_tail) - 1
-    while idx >= 0:
-        value = canonical_tail[idx]
-        if value and value in footer_candidates:
-            cut += 1
-            idx -= 1
-            continue
-        break
-    return cut
-
-
-def _order_removed_lines(
-    removed_lines: set[str],
-    canonical_to_original: dict[str, str],
-    header_candidates: set[str],
-    footer_candidates: set[str],
-    header_blocks: list[tuple[str, ...]],
-    footer_blocks: list[tuple[str, ...]],
-) -> list[str]:
-    ordered: list[str] = []
-
-    canonical_order = sorted(header_candidates | footer_candidates)
-    for canonical in canonical_order:
-        original = canonical_to_original.get(canonical)
-        if original and original in removed_lines and original not in ordered:
-            ordered.append(original)
-
-    for block in header_blocks + footer_blocks:
-        for canonical in block:
-            original = canonical_to_original.get(canonical)
-            if original and original in removed_lines and original not in ordered:
-                ordered.append(original)
-
-    for line in sorted(removed_lines):
-        if line not in ordered:
-            ordered.append(line)
-
-    return ordered
-
-
-def _canonicalize_line(line: str) -> str:
-    canonical = line.lower().strip()
-    canonical = re.sub(r"\|", " ", canonical)
-    canonical = re.sub(r"\s+", " ", canonical).strip()
-
-    separator_probe = canonical.replace(" ", "")
-    if separator_probe and re.fullmatch(r"[-:]+", separator_probe):
-        return ""
-
-    canonical = re.sub(r"\d+", "<num>", canonical)
-    canonical = re.sub(r"\s+", " ", canonical).strip(" -:")
-
-    # Ignore very short tokens to reduce false positives.
-    if len(canonical) < 6:
-        return ""
-    return canonical
-
-
-def _remove_repeated_lines_global(
-    text: str,
-    min_repeats: int = 2,
-) -> tuple[str, list[str]]:
-    lines = text.splitlines()
-    if len(lines) < 20:
-        return text, []
-
-    canonical_to_line: dict[str, str] = {}
-    counts: Counter[str] = Counter()
-    for line in lines:
-        canonical = _canonicalize_line(line)
-        if not canonical:
-            continue
-        counts[canonical] += 1
-        canonical_to_line.setdefault(canonical, line.strip())
-
-    def is_header_footer_signature(line: str) -> bool:
-        lowered = line.lower()
-        if "|" in line:
-            return True
-        markers = ("edition", "indice", "code", "page:", "page ", "footer", "header")
-        if any(marker in lowered for marker in markers):
-            return True
-        if "procédure de gestion des gabarits" in lowered:
-            return True
-        return False
-
-    candidates: set[str] = set()
-    for canonical, count in counts.items():
-        if count < min_repeats:
-            continue
-        sample = canonical_to_line.get(canonical, "")
-        if sample and is_header_footer_signature(sample):
-            candidates.add(canonical)
-
-    if not candidates:
-        return text, []
-
-    remove_idx: set[int] = set()
-    for idx, line in enumerate(lines):
-        canonical = _canonicalize_line(line)
-        if canonical in candidates:
-            remove_idx.add(idx)
-
-    for idx, line in enumerate(lines):
-        if idx in remove_idx:
-            continue
-        compact = re.sub(r"[|\\s]", "", line)
-        if compact and re.fullmatch(r"[-:]+", compact):
-            if (idx - 1 in remove_idx) or (idx + 1 in remove_idx):
-                remove_idx.add(idx)
-
-    cleaned_lines: list[str] = []
-    removed_lines: set[str] = set()
-    for idx, line in enumerate(lines):
-        if idx in remove_idx:
-            if line.strip():
-                removed_lines.add(line.strip())
-            continue
-        cleaned_lines.append(line)
-
-    cleaned_text = "\n".join(cleaned_lines).strip()
-    return cleaned_text, sorted(removed_lines)
-
-
-def _normalize_spacing(text: str) -> str:
-    # Normalize whitespace artifacts introduced by line removal passes.
-    normalized = re.sub(r"[ \t]+\n", "\n", text)
-    normalized = re.sub(r"\n[ \t]+\n", "\n\n", normalized)
-    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
-    return normalized.strip()
-
+# ---------------------------------------------------------------------------
+# Document-level metadata extraction helpers
+# ---------------------------------------------------------------------------
 
 def _extract_page_count(document: Any) -> int | None:
+    """Return the number of pages when the Docling document exposes a countable pages collection."""
     pages = getattr(document, "pages", None)
     if pages is None:
         return None
@@ -572,6 +291,7 @@ def _extract_page_count(document: Any) -> int | None:
 
 
 def _extract_title(document: Any) -> str | None:
+    """Infer a document title from page-one heading items, then fall back to document metadata."""
     section_like = {"SECTION_HEADER", "TITLE", "HEADING"}
 
     for item, _ in _iterate_items(document):
@@ -597,6 +317,7 @@ def _extract_title(document: Any) -> str | None:
 
 
 def _is_page_one(item: Any) -> bool:
+    """Check whether a Docling item has provenance pointing to the first page."""
     for prov_entry in getattr(item, "prov", None) or []:
         if getattr(prov_entry, "page_no", None) == 1:
             return True
@@ -604,6 +325,7 @@ def _is_page_one(item: Any) -> bool:
 
 
 def _extract_metadata(document: Any) -> dict[str, Any] | None:
+    """Return native document metadata when Docling exposes it as a dictionary."""
     metadata = getattr(document, "metadata", None)
     if isinstance(metadata, dict):
         return metadata
@@ -611,6 +333,7 @@ def _extract_metadata(document: Any) -> dict[str, Any] | None:
 
 
 def _extract_heading_hints(document: Any) -> list[dict[str, Any]]:
+    """Collect title-like items as lightweight section hints with their first known page number."""
     hints: list[dict[str, Any]] = []
     for item, _ in _iterate_items(document):
         label = getattr(item, "label", None)
@@ -636,6 +359,7 @@ def _extract_heading_hints(document: Any) -> list[dict[str, Any]]:
 
 
 def _extract_page1_metadata_fields(page_text: str) -> dict[str, str]:
+    """Parse selected key-value fields from the first page to enrich returned metadata."""
     fields: dict[str, str] = {}
     if not page_text.strip():
         return fields
@@ -658,7 +382,7 @@ def _extract_page1_metadata_fields(page_text: str) -> dict[str, str]:
     while i < len(lines):
         line = lines[i]
         # Support "Key: value" and "Key :" + next-line value patterns.
-        inline = re.match(r"^([A-Za-zÀ-ÿ][^:]{1,40})\s*:\s*(.+)$", line)
+        inline = _RE_KV_INLINE.match(line)
         if inline:
             key = inline.group(1).strip().lower().replace(" ", "_")
             value = inline.group(2).strip()
@@ -667,7 +391,7 @@ def _extract_page1_metadata_fields(page_text: str) -> dict[str, str]:
             i += 1
             continue
 
-        key_only = re.match(r"^([A-Za-zÀ-ÿ][^:]{1,40})\s*:\s*$", line)
+        key_only = _RE_KV_KEY_ONLY.match(line)
         if key_only and i + 1 < len(lines):
             key = key_only.group(1).strip().lower().replace(" ", "_")
             nxt = lines[i + 1]

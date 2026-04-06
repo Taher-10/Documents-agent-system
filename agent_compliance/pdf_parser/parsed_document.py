@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 # RawPageText
 # ---------------------------------------------------------------------------
 
+# NOTE: not yet used — defined for future pipeline integration
 @dataclass
 class RawPageText:
     """Raw text and tables extracted from one page before cleaning/segmenting.
@@ -123,6 +124,7 @@ class ParsedSection:
 # ParsedDocument
 # ---------------------------------------------------------------------------
 
+# NOTE: not yet used — scaffolded for future Agent 2 (compliance checker) integration
 @dataclass
 class ParsedDocument:
     """Top-level output of the document parser pipeline.
@@ -255,6 +257,7 @@ class ParsedDocument:
 
 # ---------------------------------------------------------------------------
 # Exceptions
+# NOTE: not yet used — defined for future consumer code to catch explicitly
 # ---------------------------------------------------------------------------
 
 class UnsupportedFormatError(Exception):

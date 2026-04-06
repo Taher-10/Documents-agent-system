@@ -1,0 +1,126 @@
+{
+  "summary": {
+    "total_files": 6,
+    "success": 6,
+    "errors": 0,
+    "total_elapsed_seconds": 87.526,
+    "avg_elapsed_seconds": 14.588,
+    "avg_accuracy_score": 0.9083
+  },
+  "results": [
+    {
+      "file": "3.-Environmental-_-Quality-Management-System-Manual.pdf",
+      "path": "agent_compliance/qhme_docs/3.-Environmental-_-Quality-Management-System-Manual.pdf",
+      "status": "ok",
+      "error": null,
+      "elapsed_seconds": 39.009,
+      "metrics": {
+        "text_extracted": true,
+        "char_count": 54560,
+        "word_count": 7406,
+        "pages": 27,
+        "chars_per_page": 2020.7,
+        "title_detected": true,
+        "heading_count": 86,
+        "furniture_removed": 1,
+        "accuracy_score": 1.0
+      },
+      "title": "EQMS Manual"
+    },
+    {
+      "file": "General Requirements for Infrequently performed techniques.pdf",
+      "path": "agent_compliance/qhme_docs/General Requirements for Infrequently performed techniques.pdf",
+      "status": "ok",
+      "error": null,
+      "elapsed_seconds": 14.622,
+      "metrics": {
+        "text_extracted": true,
+        "char_count": 16899,
+        "word_count": 1396,
+        "pages": 5,
+        "chars_per_page": 3379.8,
+        "title_detected": true,
+        "heading_count": 9,
+        "furniture_removed": 0,
+        "accuracy_score": 0.95
+      },
+      "title": "General European OMCL Network (GEON) QUALITY MANAGEMENT DOCUMENT"
+    },
+    {
+      "file": "Guideline on Management of Documents and Records.pdf",
+      "path": "agent_compliance/qhme_docs/Guideline on Management of Documents and Records.pdf",
+      "status": "ok",
+      "error": null,
+      "elapsed_seconds": 12.529,
+      "metrics": {
+        "text_extracted": true,
+        "char_count": 15187,
+        "word_count": 2073,
+        "pages": 5,
+        "chars_per_page": 3037.4,
+        "title_detected": true,
+        "heading_count": 25,
+        "furniture_removed": 0,
+        "accuracy_score": 0.95
+      },
+      "title": "General European OMCL Network (GEON) QUALITY MANAGEMENT DOCUMENT"
+    },
+    {
+      "file": "PQ-PROD-01 02 Procédure de gestion des gabarits.pdf",
+      "path": "agent_compliance/qhme_docs/PQ-PROD-01 02 Procédure de gestion des gabarits.pdf",
+      "status": "ok",
+      "error": null,
+      "elapsed_seconds": 14.586,
+      "metrics": {
+        "text_extracted": true,
+        "char_count": 8191,
+        "word_count": 1154,
+        "pages": 7,
+        "chars_per_page": 1170.1,
+        "title_detected": true,
+        "heading_count": 14,
+        "furniture_removed": 10,
+        "accuracy_score": 1.0
+      },
+      "title": "PQ-PROD-01 02 Procédure de gestion des gabarits"
+    },
+    {
+      "file": "ReportJobDescriptionFiche01 (1).pdf",
+      "path": "agent_compliance/qhme_docs/ReportJobDescriptionFiche01 (1).pdf",
+      "status": "ok",
+      "error": null,
+      "elapsed_seconds": 6.536,
+      "metrics": {
+        "text_extracted": true,
+        "char_count": 5541,
+        "word_count": 776,
+        "pages": 3,
+        "chars_per_page": 1847.0,
+        "title_detected": true,
+        "heading_count": 11,
+        "furniture_removed": 2,
+        "accuracy_score": 1.0
+      },
+      "title": "Fiche de poste"
+    },
+    {
+      "file": "ReportJobDescriptionFiche01.docx",
+      "path": "agent_compliance/qhme_docs/ReportJobDescriptionFiche01.docx",
+      "status": "ok",
+      "error": null,
+      "elapsed_seconds": 0.241,
+      "metrics": {
+        "text_extracted": true,
+        "char_count": 2239,
+        "word_count": 340,
+        "pages": 0,
+        "chars_per_page": null,
+        "title_detected": true,
+        "heading_count": 0,
+        "furniture_removed": 0,
+        "accuracy_score": 0.55
+      },
+      "title": "ReportJobDescriptionFiche01"
+    }
+  ]
+}
