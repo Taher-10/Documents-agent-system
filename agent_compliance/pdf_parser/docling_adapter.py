@@ -143,7 +143,7 @@ def _split_markdown_into_sections(markdown: str) -> list[ParsedSection]:
         )
         index += 1
 
-    return sections
+    return _drop_noise_sections(sections)
 
 
 def _split_plaintext_into_sections(
@@ -213,7 +213,7 @@ def _split_plaintext_into_sections(
     while sections and not sections[-1].raw_text.strip():
         sections.pop()
 
-    return sections
+    return _drop_noise_sections(sections)
 
 
 def _is_plain_heading_line(
@@ -297,13 +297,16 @@ def assess_quality(
 
 
 def _classify_section_type(title: str, body: str) -> SectionType:
+    title_lower = title.lower()
     blob = f"{title}\n{body}".lower()
 
-    if any(k in blob for k in ("objet", "domaine d'application", "scope")):
+    # Title-only checks prevent body text from triggering wrong types.
+    # e.g. "Scope: All projects" in body must not classify the section as SCOPE.
+    if any(k in title_lower for k in ("objet", "domaine d'application", "scope")):
         return SectionType.SCOPE
-    if any(k in blob for k in ("definition", "définition", "glossaire")):
+    if any(k in title_lower for k in ("definition", "définition", "glossaire")):
         return SectionType.DEFINITIONS
-    if any(k in blob for k in ("référence", "reference", "documents associés")):
+    if any(k in title_lower for k in ("référence", "reference", "documents associés")):
         return SectionType.REFERENCES
     if any(k in blob for k in ("logigramme", "flowchart", "diagram")):
         return SectionType.PROCESS_DIAGRAM
@@ -312,6 +315,21 @@ def _classify_section_type(title: str, body: str) -> SectionType:
     if any(k in blob for k in ("sommaire", "historique", "approbation", "validation")):
         return SectionType.METADATA
     return SectionType.PROCEDURE_TEXT
+
+
+def _drop_noise_sections(sections: list[ParsedSection]) -> list[ParsedSection]:
+    """Remove repeated empty-body sections (e.g. page footers turned into headings).
+
+    A section is considered noise when its body is empty AND the same title
+    appears more than once across the list — a clear sign of a repeated
+    header/footer that the PDF extractor mistook for a heading.
+    """
+    from collections import Counter
+    title_counts = Counter(s.title for s in sections if not s.raw_text.strip())
+    return [
+        s for s in sections
+        if s.raw_text.strip() or title_counts[s.title] < 2
+    ]
 
 
 def _estimate_confidence(text: str) -> float:
