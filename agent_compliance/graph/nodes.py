@@ -4,7 +4,7 @@ from pathlib import Path
 
 from langgraph.config import get_stream_writer
 
-from agent_compliance.pdf_parser import parse_document
+from agent_compliance.pdf_parser import docling_to_sections, parse_document
 
 from .state import AgentState
 
@@ -38,6 +38,17 @@ def parse_document_node(state: AgentState) -> dict:
         return {"parse_result": result, "status": "parsed"}
     except Exception as exc:
         _emit("parse_document", "error", str(exc))
+        return {"error": str(exc), "status": "error"}
+
+
+def extract_sections_node(state: AgentState) -> dict:
+    _emit("extract_sections", "start", "Splitting document into logical sections...")
+    try:
+        sections = docling_to_sections(state["parse_result"])
+        _emit("extract_sections", "done", f"{len(sections)} sections identified")
+        return {"sections": sections, "status": "sectioned"}
+    except Exception as exc:
+        _emit("extract_sections", "error", str(exc))
         return {"error": str(exc), "status": "error"}
 
 

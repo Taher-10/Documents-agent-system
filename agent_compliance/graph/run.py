@@ -14,6 +14,7 @@ def _initial_state(document_path: str) -> dict:
     return {
         "document_path": document_path,
         "parse_result": None,
+        "sections": None,
         "error": None,
         "status": "pending",
     }
@@ -86,6 +87,9 @@ async def _async_main(args: argparse.Namespace) -> int:
     if parse_result:
         pages = parse_result.pages or len(parse_result.page_texts or []) or "?"
         print(f"Pages parsed  : {pages}")
+    sections = result.get("sections")
+    if sections is not None:
+        print(f"Sections found: {len(sections)}")
     print(f"Status        : {result['status']}")
     return 0
 

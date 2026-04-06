@@ -329,3 +329,122 @@ __init__.py
 
 External consumers (`graph/nodes.py`, `parse.py`) import only from
 `__init__.py` and never from submodules directly.
+
+---
+
+## Structural Refactoring
+
+Two large files were split into focused private submodules to reduce per-file responsibility:
+
+| Original file | Lines before | Extracted to | Lines after |
+|---|---|---|---|
+| `docling_parser.py` | ~701 | `_cleanup.py` | ~290 |
+| `docling_adapter.py` | ~504 | `_page_ranges.py` | ~290 |
+
+`__init__.py` was updated to export `ParsedSection` and `SectionType`, which were
+previously missing from `__all__` despite being returned by public API functions.
+
+---
+
+## Performance Optimizations
+
+Seven targeted changes were applied across four files. No logic, inputs, or outputs
+were changed — only how computation is structured.
+
+### 1. Regex hoisting (`_cleanup.py`)
+
+Eight patterns moved from inside function bodies to module-level constants compiled
+once at import time:
+
+```python
+_RE_PIPE      = re.compile(r"\|")
+_RE_WS        = re.compile(r"\s+")
+_RE_SEPARATOR = re.compile(r"[-:]+")
+_RE_DIGITS    = re.compile(r"\d+")
+_RE_BARS      = re.compile(r"[|\\s]")
+_RE_NL_TRAIL  = re.compile(r"[ \t]+\n")
+_RE_NL_BLANK  = re.compile(r"\n[ \t]+\n")
+_RE_NL_MULTI  = re.compile(r"\n{3,}")
+```
+
+Previously these were compiled on every call to `_canonicalize_line()`,
+`_remove_repeated_lines_global()`, and `_normalize_spacing()`.
+
+### 2. Per-page canonicalization caching (`_cleanup.py`)
+
+In `_remove_repeated_headers_footers()`, `_canonicalize_line()` was called 3–4×
+per line (once for the top-cut scan, once for the bottom-cut scan, once in the
+inline sweep, once for removal tracking). Now each page's lines are canonicalized
+exactly once into a `page_canonicals` list and all subsequent passes reuse that list:
+
+```python
+page_canonicals = [_canonicalize_line(line) for line in lines]
+kept_canon = page_canonicals[top_cut:kept_end]
+kept = [ln for ln, c in zip(kept_raw, kept_canon) if c not in global_candidates]
+kept_set = set(kept)
+for line, canon in zip(lines, page_canonicals):
+    if canon in global_candidates and line not in kept_set:
+        ...
+```
+
+### 3. O(n²) → O(n) deduplication (`_cleanup.py`)
+
+`_order_removed_lines()` previously used `not in ordered` (list membership = O(n))
+inside a loop over all candidates, giving O(n²) total. Replaced with a parallel
+`seen: set[str]` for O(1) membership checks:
+
+```python
+seen: set[str] = set()
+if original not in seen:
+    ordered.append(original)
+    seen.add(original)
+```
+
+### 4. Regex hoisting (`_page_ranges.py`)
+
+Four patterns moved to module level:
+
+```python
+_RE_NUMBERED_HEADING = re.compile(r"^\s*(\d+([.-]\d+)*)\s*[-.)]?\s+\S+")
+_RE_MD_PUNCT         = re.compile(r"[`*_~#>\[\](){}]")
+_RE_NON_ALNUM        = re.compile(r"[^a-z0-9]+")
+_RE_WS               = re.compile(r"\s+")
+```
+
+`_is_heading_like()` now calls `_RE_NUMBERED_HEADING.match(text)` instead of
+compiling an inline pattern. `_normalize_heading_key()` uses the three hoisted
+constants directly.
+
+### 5. Redundant pass removal (`_page_ranges.py`)
+
+`_normalize_heading_key()` previously ran four substitution passes. The intermediate
+whitespace-collapse step was immediately overwritten by the `[^a-z0-9]+` substitution
+that followed it, making it a no-op. Removed, leaving three passes:
+
+```python
+normalized = _RE_MD_PUNCT.sub(" ", normalized)   # strip markdown punctuation
+normalized = _RE_NON_ALNUM.sub(" ", normalized)   # collapse non-alphanumeric
+normalized = _RE_WS.sub(" ", normalized).strip()  # final whitespace collapse
+```
+
+### 6. Regex hoisting (`docling_parser.py`)
+
+Two patterns used inside the `while` loop of `_extract_page1_metadata_fields()`
+were hoisted to module level:
+
+```python
+_RE_KV_INLINE   = re.compile(r"^([A-Za-zÀ-ÿ][^:]{1,40})\s*:\s*(.+)$")
+_RE_KV_KEY_ONLY = re.compile(r"^([A-Za-zÀ-ÿ][^:]{1,40})\s*:\s*$")
+```
+
+### 7. Regex hoisting (`docling_adapter.py`)
+
+The heading-split pattern used in `_split_markdown_into_sections()` was moved from
+a local variable inside the function to a module-level constant:
+
+```python
+_RE_MD_HEADING = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
+```
+
+Previously `re.compile(...)` was called on every invocation of
+`_split_markdown_into_sections()`.

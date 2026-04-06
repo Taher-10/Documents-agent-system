@@ -10,7 +10,8 @@ class AgentState(TypedDict):
 
     # --- Intermediate ---
     parse_result: Any | None          # ParseResult dataclass from docling_parser
+    sections: list[Any] | None        # ParsedSection list from docling_to_sections
 
     # --- Control ---
     error: str | None
-    status: str                        # "pending" | "validated" | "parsed" | "error"
+    status: str                        # "pending" | "validated" | "parsed" | "sectioned" | "error"
