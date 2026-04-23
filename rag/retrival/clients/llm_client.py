@@ -7,14 +7,17 @@ Supported providers
 -------------------
 - ``ollama``  — local Ollama server (default, good for dev)
 - ``openai``  — OpenAI API (gpt-4o-mini by default, good for prod)
+- ``groq``    — Groq API (llama-3.3-70b-versatile by default, fast inference)
 
 Configuration — all via environment variables
 ---------------------------------------------
-    LLM_PROVIDER   = "ollama" | "openai"        (default: "ollama")
-    OLLAMA_HOST    = "http://localhost:11434"    (default)
-    OLLAMA_MODEL   = "llama3.2:3b"              (default)
-    OPENAI_API_KEY = "sk-..."                   (required for openai)
-    OPENAI_MODEL   = "gpt-4o-mini"             (default)
+    LLM_PROVIDER   = "ollama" | "openai" | "groq"  (default: "ollama")
+    OLLAMA_HOST    = "http://localhost:11434"        (default)
+    OLLAMA_MODEL   = "llama3.2:3b"                  (default)
+    OPENAI_API_KEY = "sk-..."                        (required for openai)
+    OPENAI_MODEL   = "gpt-4o-mini"                  (default)
+    GROQ_API_KEY   = "gsk_..."                       (required for groq)
+    GROQ_MODEL     = "llama-3.3-70b-versatile"       (default)
 
 Public API
 ----------
@@ -25,10 +28,25 @@ import asyncio
 import os
 from typing import Any
 
-LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")
-OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
-OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+def _provider() -> str:
+    return os.getenv("LLM_PROVIDER", "ollama")
+
+
+def _ollama_host() -> str:
+    return os.getenv("OLLAMA_HOST", "http://localhost:11434")
+
+
+def _ollama_model() -> str:
+    return os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+
+
+def _openai_model() -> str:
+    return os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+
+def _groq_model() -> str:
+    return os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 
 async def chat_complete(prompt: str, max_tokens: int = 150, timeout: int = 30) -> str:
@@ -42,8 +60,11 @@ async def chat_complete(prompt: str, max_tokens: int = 150, timeout: int = 30) -
         timeout: HTTP request timeout in seconds (default 30). Increase for
                  large prompts that require more generation time.
     """
-    if LLM_PROVIDER == "openai":
+    provider = _provider()
+    if provider == "openai":
         return await _openai_complete(prompt, max_tokens)
+    if provider == "groq":
+        return await _groq_complete(prompt, max_tokens, timeout)
     return await _ollama_complete(prompt, max_tokens, timeout)
 
 
@@ -55,9 +76,9 @@ def _ollama_request(prompt: str, max_tokens: int, timeout: int = 30) -> str:
     """Synchronous Ollama /api/chat call — run via asyncio.to_thread."""
     import requests  # noqa: PLC0415  (deferred; not everyone has this path)
 
-    url = f"{OLLAMA_HOST}/api/chat"
+    url = f"{_ollama_host()}/api/chat"
     payload: dict[str, Any] = {
-        "model": OLLAMA_MODEL,
+        "model": _ollama_model(),
         "messages": [{"role": "user", "content": prompt}],
         "stream": False,
         "options": {
@@ -85,10 +106,34 @@ async def _openai_complete(prompt: str, max_tokens: int) -> str:
 
     client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = await client.chat.completions.create(
-        model=OPENAI_MODEL,
+        model=_openai_model(),
         messages=[{"role": "user", "content": prompt}],
         max_tokens=max_tokens,
         temperature=0.3,
+    )
+    content = response.choices[0].message.content
+    return (content or "").strip()
+
+
+# ---------------------------------------------------------------------------
+# Groq
+# ---------------------------------------------------------------------------
+
+async def _groq_complete(prompt: str, max_tokens: int, timeout: int = 30) -> str:
+    from openai import AsyncOpenAI  # noqa: PLC0415  (reuse openai-compatible client)
+
+    client = AsyncOpenAI(
+        api_key=os.getenv("GROQ_API_KEY"),
+        base_url="https://api.groq.com/openai/v1",
+    )
+    response = await asyncio.wait_for(
+        client.chat.completions.create(
+            model=_groq_model(),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=max_tokens,
+            temperature=0.3,
+        ),
+        timeout=timeout,
     )
     content = response.choices[0].message.content
     return (content or "").strip()

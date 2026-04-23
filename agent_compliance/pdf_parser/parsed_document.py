@@ -85,6 +85,8 @@ class ParsedSection:
     visual_ref: str | None = None
     heading_level: int = 1
     scope: Any | None = field(default=None)  # RetrievalScope, enriched by classify_sections_node
+    llm_valid: bool | None = None
+    predicted_clause_family: str | None = None
 
     def to_dict(self) -> dict:
         """Serialize to a plain dict (JSON-safe)."""
@@ -98,6 +100,8 @@ class ParsedSection:
             "visual_ref": self.visual_ref,
             "heading_level": self.heading_level,
             "scope": self.scope.model_dump() if self.scope is not None else None,
+            "llm_valid": self.llm_valid,
+            "predicted_clause_family": self.predicted_clause_family,
         }
 
     @classmethod
@@ -117,6 +121,8 @@ class ParsedSection:
             extraction_confidence=float(d["extraction_confidence"]),
             visual_ref=d.get("visual_ref"),
             heading_level=int(d.get("heading_level", 1)),
+            llm_valid=d.get("llm_valid"),
+            predicted_clause_family=d.get("predicted_clause_family"),
         )
 
 

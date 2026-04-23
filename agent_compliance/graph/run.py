@@ -5,6 +5,9 @@ import asyncio
 import uuid
 from typing import AsyncIterator
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from .graph import build_graph
 
 _EVENT_PREFIX = {"start": "...", "done": "✓", "error": "✗"}
