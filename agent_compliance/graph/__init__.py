@@ -1,4 +1,4 @@
-"""LangGraph compliance agent."""
+"""Compliance orchestrator package."""
 
 from .graph import build_graph, graph
 from .run import run

@@ -1,69 +1,50 @@
 from __future__ import annotations
 
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.graph import END, START, StateGraph
+from typing import Any, AsyncIterator
 
-from .nodes import (
-    extract_sections_node,
-    handle_error_node,
-    parse_document_node,
-    validate_input,
-)
-from .sections_llm import sections_llm_node
+from .run import run as orchestrator_run
+from .run import stream_run
 from .state import AgentState
 
 
-def _route_after_validate(state: AgentState) -> str:
-    return "handle_error" if state.get("error") else "parse_document"
+class ComplianceOrchestrator:
+    """Compatibility adapter exposing ainvoke/astream over the plain orchestrator."""
+
+    async def ainvoke(self, state: AgentState, config: dict | None = None) -> AgentState:
+        thread_id = _extract_thread_id(config)
+        return await orchestrator_run(state["document_path"], thread_id=thread_id)
+
+    async def astream(
+        self,
+        state: AgentState,
+        config: dict | None = None,
+        stream_mode: list[str] | None = None,
+    ) -> AsyncIterator[tuple[str, dict]]:
+        modes = set(stream_mode or ["custom", "values"])
+        thread_id = _extract_thread_id(config)
+
+        async for event in stream_run(state["document_path"], thread_id=thread_id):
+            if event.get("event") == "final":
+                if "values" in modes:
+                    yield "values", event["state"]
+            elif "custom" in modes:
+                yield "custom", event
 
 
-def _route_after_parse(state: AgentState) -> str:
-    return "handle_error" if state.get("error") else "extract_sections"
+def _extract_thread_id(config: dict | None) -> str | None:
+    if not isinstance(config, dict):
+        return None
+    configurable = config.get("configurable")
+    if not isinstance(configurable, dict):
+        return None
+    thread_id = configurable.get("thread_id")
+    return thread_id if isinstance(thread_id, str) else None
 
 
-def _route_after_extract_sections(state: AgentState) -> str:
-    return "handle_error" if state.get("error") else "sections_llm"
-
-
-def _route_after_sections_llm(state: AgentState) -> str:
-    return "handle_error" if state.get("error") else END
-
-
-def build_graph(checkpointer: InMemorySaver | None = None) -> StateGraph:
-    if checkpointer is None:
-        checkpointer = InMemorySaver()
-
-    return (
-        StateGraph(AgentState)
-        .add_node("validate_input", validate_input)
-        .add_node("parse_document", parse_document_node)
-        .add_node("extract_sections", extract_sections_node)
-        .add_node("sections_llm", sections_llm_node)
-        .add_node("handle_error", handle_error_node)
-        .add_edge(START, "validate_input")
-        .add_conditional_edges(
-            "validate_input",
-            _route_after_validate,
-            ["parse_document", "handle_error"],
-        )
-        .add_conditional_edges(
-            "parse_document",
-            _route_after_parse,
-            ["extract_sections", "handle_error"],
-        )
-        .add_conditional_edges(
-            "extract_sections",
-            _route_after_extract_sections,
-            ["sections_llm", "handle_error"],
-        )
-        .add_conditional_edges(
-            "sections_llm",
-            _route_after_sections_llm,
-            [END, "handle_error"],
-        )
-        .add_edge("handle_error", END)
-        .compile(checkpointer=checkpointer)
-    )
+def build_graph(checkpointer: Any | None = None) -> ComplianceOrchestrator:
+    """Return a plain Python orchestrator (no LangGraph runtime)."""
+    _ = checkpointer  # kept for backward-compatible signature
+    return ComplianceOrchestrator()
 
 
 graph = build_graph()

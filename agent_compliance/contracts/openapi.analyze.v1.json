@@ -1,0 +1,416 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Agent IA 2 Analyze API",
+    "description": "QALITAS -> Agent IA 2 synchronous document analyze contract.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/analyze": {
+      "post": {
+        "summary": "Analyze",
+        "operationId": "analyze_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeSuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActionItem": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "clause": {
+            "type": "string",
+            "title": "Clause"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "HIGH",
+              "MEDIUM",
+              "LOW"
+            ],
+            "title": "Priority"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "clause",
+          "priority",
+          "section"
+        ],
+        "title": "ActionItem"
+      },
+      "AnalyzeDocument": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Code"
+          },
+          "designation": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Designation"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Version"
+          },
+          "type_designation": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Type Designation"
+          },
+          "Q": {
+            "type": "boolean",
+            "title": "Q"
+          },
+          "E": {
+            "type": "boolean",
+            "title": "E"
+          },
+          "S": {
+            "type": "boolean",
+            "title": "S"
+          },
+          "H": {
+            "type": "boolean",
+            "title": "H"
+          },
+          "file_path": {
+            "type": "string",
+            "minLength": 1,
+            "title": "File Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "designation",
+          "version",
+          "type_designation",
+          "Q",
+          "E",
+          "S",
+          "H",
+          "file_path"
+        ],
+        "title": "AnalyzeDocument"
+      },
+      "AnalyzeOptions": {
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "json",
+              "pdf",
+              "docx"
+            ],
+            "title": "Format",
+            "default": "json"
+          }
+        },
+        "type": "object",
+        "title": "AnalyzeOptions"
+      },
+      "AnalyzeRequest": {
+        "properties": {
+          "session": {
+            "$ref": "#/components/schemas/AnalyzeSession"
+          },
+          "document": {
+            "$ref": "#/components/schemas/AnalyzeDocument"
+          },
+          "options": {
+            "$ref": "#/components/schemas/AnalyzeOptions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session",
+          "document"
+        ],
+        "title": "AnalyzeRequest"
+      },
+      "AnalyzeSession": {
+        "properties": {
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "site_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Site Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_id",
+          "site_id",
+          "user_id"
+        ],
+        "title": "AnalyzeSession"
+      },
+      "AnalyzeSuccessResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "completed",
+            "title": "Status"
+          },
+          "doc_id": {
+            "type": "string",
+            "title": "Doc Id"
+          },
+          "doc_code": {
+            "type": "string",
+            "title": "Doc Code"
+          },
+          "sections_analyzed": {
+            "type": "integer",
+            "title": "Sections Analyzed"
+          },
+          "sections_skipped": {
+            "type": "integer",
+            "title": "Sections Skipped"
+          },
+          "applicable_norms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Applicable Norms"
+          },
+          "report": {
+            "$ref": "#/components/schemas/ReportPayload"
+          },
+          "report_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "doc_id",
+          "doc_code",
+          "sections_analyzed",
+          "sections_skipped",
+          "applicable_norms",
+          "report"
+        ],
+        "title": "AnalyzeSuccessResponse"
+      },
+      "CoverageItem": {
+        "properties": {
+          "clause": {
+            "type": "string",
+            "title": "Clause"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "COVERED",
+              "PARTIAL",
+              "MISSING"
+            ],
+            "title": "Status"
+          },
+          "evidence": {
+            "type": "string",
+            "title": "Evidence"
+          },
+          "gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Gaps"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "clause",
+          "status",
+          "evidence",
+          "gaps",
+          "confidence"
+        ],
+        "title": "CoverageItem"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "error",
+            "title": "Status",
+            "default": "error"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "detail"
+        ],
+        "title": "ErrorResponse"
+      },
+      "ReportPayload": {
+        "properties": {
+          "executive_summary": {
+            "type": "string",
+            "title": "Executive Summary"
+          },
+          "coverage_matrix": {
+            "items": {
+              "$ref": "#/components/schemas/CoverageItem"
+            },
+            "type": "array",
+            "title": "Coverage Matrix"
+          },
+          "action_plan": {
+            "items": {
+              "$ref": "#/components/schemas/ActionItem"
+            },
+            "type": "array",
+            "title": "Action Plan"
+          },
+          "overall_status": {
+            "type": "string",
+            "enum": [
+              "COVERED",
+              "PARTIAL",
+              "MISSING"
+            ],
+            "title": "Overall Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "executive_summary",
+          "coverage_matrix",
+          "action_plan",
+          "overall_status"
+        ],
+        "title": "ReportPayload"
+      }
+    }
+  }
+}

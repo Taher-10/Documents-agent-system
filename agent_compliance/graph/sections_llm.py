@@ -24,8 +24,6 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from langgraph.config import get_stream_writer
-
 from rag.retrival.clients.llm_client import chat_complete
 
 from .state import AgentState
@@ -45,8 +43,8 @@ _TEXT_PREVIEW_CHARS = 300   # chars of raw_text sent to the LLM per section
 
 
 def _emit(node: str, event: str, msg: str) -> None:
-    """Push a structured log event through the LangGraph stream writer."""
-    get_stream_writer()({"node": node, "event": event, "msg": msg})
+    """Default local emitter used when no runtime stream emitter is injected."""
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -301,11 +299,14 @@ async def filter_sections_with_llm(
 
 
 # ---------------------------------------------------------------------------
-# LangGraph node
+# Orchestrator node
 # ---------------------------------------------------------------------------
 
 
-async def sections_llm_node(state: AgentState) -> dict:
+async def sections_llm_node(
+    state: AgentState,
+    emit_fn: Callable[[str, str, str], None] | None = None,
+) -> dict:
     """LLM-based ISO auditor filter.
 
     Evaluates each classified section and sets scope=None on sections that
@@ -320,4 +321,4 @@ async def sections_llm_node(state: AgentState) -> dict:
       - Parsed result would filter out ALL currently-classified sections
     """
     sections: list[Any] = state.get("sections") or []
-    return await filter_sections_with_llm(sections, emit_fn=_emit)
+    return await filter_sections_with_llm(sections, emit_fn=emit_fn or _emit)
