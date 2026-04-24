@@ -31,9 +31,8 @@ class AnalyzeDocument(BaseModel):
         raw = value.strip()
         if not raw:
             raise ValueError("file_path must not be empty")
-        if PurePosixPath(raw).is_absolute() or PureWindowsPath(raw).is_absolute():
-            raise ValueError("file_path must be relative")
-        parts = PurePosixPath(raw).parts
+        is_absolute = PurePosixPath(raw).is_absolute() or PureWindowsPath(raw).is_absolute()
+        parts = PurePosixPath(raw).parts if not is_absolute else PurePosixPath(raw.lstrip("/")).parts
         if any(part == ".." for part in parts):
             raise ValueError("file_path must not contain '..'")
         return raw

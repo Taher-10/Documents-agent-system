@@ -4,9 +4,9 @@
   "doc_code": "PRO-ENV-001",
   "sections_analyzed": 2,
   "sections_skipped": 0,
-  "applicable_norms": ["ISO 14001", "ISO 22000"],
+  "applicable_norms": ["ISO 14001", "ISO 45001"],
   "report": {
-    "executive_summary": "Document PRO-ENV-001 (Procédure de maîtrise environnementale) analyzed against ISO 14001, ISO 22000.",
+    "executive_summary": "Document PRO-ENV-001 (Procédure de maîtrise environnementale) analyzed against ISO 14001, ISO 45001.",
     "coverage_matrix": [
       {
         "clause": "ISO 14001 8.1",
@@ -16,7 +16,7 @@
         "confidence": 1.0
       },
       {
-        "clause": "ISO 22000 8.5",
+        "clause": "ISO 45001 8.1",
         "status": "COVERED",
         "evidence": "Scope",
         "gaps": [],

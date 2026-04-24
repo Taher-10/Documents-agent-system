@@ -1,0 +1,99 @@
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS Company (
+    Id TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    CompanyGroupId TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS Site (
+    Id TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    CompanyId TEXT NOT NULL REFERENCES Company(Id)
+);
+
+CREATE TABLE IF NOT EXISTS Employees (
+    Id TEXT PRIMARY KEY,
+    IsEnabled INTEGER NOT NULL DEFAULT 1,
+    SerialNumber TEXT NOT NULL,
+    FirstName TEXT,
+    LastName TEXT,
+    FullName TEXT,
+    Email TEXT,
+    SiteId TEXT NOT NULL REFERENCES Site(Id),
+    CompanyId TEXT NOT NULL REFERENCES Company(Id)
+);
+
+CREATE TABLE IF NOT EXISTS Ini_Types (
+    Id TEXT PRIMARY KEY,
+    Code TEXT NOT NULL,
+    Number INTEGER NOT NULL DEFAULT 0,
+    Designation TEXT NOT NULL,
+    SiteId TEXT NOT NULL REFERENCES Site(Id),
+    CompanyId TEXT NOT NULL REFERENCES Company(Id)
+);
+
+CREATE TABLE IF NOT EXISTS InternalDocs (
+    Id TEXT PRIMARY KEY,
+    Code TEXT NOT NULL DEFAULT '',
+    "Index" TEXT NOT NULL DEFAULT '00',
+    Designation TEXT NOT NULL,
+    SiteId TEXT NOT NULL REFERENCES Site(Id),
+    CompanyId TEXT NOT NULL REFERENCES Company(Id),
+    Q INTEGER NOT NULL DEFAULT 0,
+    S INTEGER NOT NULL DEFAULT 0,
+    E INTEGER NOT NULL DEFAULT 0,
+    H INTEGER NOT NULL DEFAULT 0,
+    TypesId TEXT NOT NULL REFERENCES Ini_Types(Id),
+    FilePath TEXT,
+    CreatedDate TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT OR REPLACE INTO Company (Id, Name, CompanyGroupId)
+VALUES ('00000000-0000-0000-0000-000000000001', 'QALITAS Mock Company', '00000000-0000-0000-0000-00000000A001');
+
+INSERT OR REPLACE INTO Site (Id, Name, CompanyId)
+VALUES ('00000000-0000-0000-0000-000000000002', 'QALITAS Mock Site', '00000000-0000-0000-0000-000000000001');
+
+INSERT OR REPLACE INTO Employees (
+    Id, IsEnabled, SerialNumber, FirstName, LastName, FullName, Email, SiteId, CompanyId
+)
+VALUES (
+    '00000000-0000-0000-0000-000000000003',
+    1,
+    'EMP-0001',
+    'Mock',
+    'Caller',
+    'Mock Caller',
+    'mock.caller@qalitas.local',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000001'
+);
+
+INSERT OR REPLACE INTO Ini_Types (Id, Code, Number, Designation, SiteId, CompanyId)
+VALUES (
+    '00000000-0000-0000-0000-000000000010',
+    'PRO',
+    1,
+    'Procédure',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000001'
+);
+
+INSERT OR REPLACE INTO InternalDocs (
+    Id, Code, "Index", Designation, SiteId, CompanyId, Q, S, E, H, TypesId, FilePath
+)
+VALUES (
+    '00000000-0000-0000-0000-000000000004',
+    'PRO-ENV-001',
+    '02',
+    'Procédure de maîtrise environnementale',
+    '00000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000001',
+    0,
+    1,
+    1,
+    0,
+    '00000000-0000-0000-0000-000000000010',
+    'qalitas-mock-caller/storage/docs/PRO-ENV-001.pdf'
+);

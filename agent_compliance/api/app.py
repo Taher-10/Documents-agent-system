@@ -50,9 +50,11 @@ def _file_base_path() -> Path:
 
 def _resolve_relative_file_path(file_path: str) -> Path:
     base = _file_base_path()
-    full_path = (base / file_path).resolve()
+    requested = Path(file_path).expanduser()
+    full_path = requested.resolve() if requested.is_absolute() else (base / requested).resolve()
     try:
-        full_path.relative_to(base)
+        if not requested.is_absolute():
+            full_path.relative_to(base)
     except ValueError as exc:  # pragma: no cover - defense in depth after model validation
         raise ApiError(422, "VALIDATION_ERROR", "file_path escapes FILE_BASE_PATH") from exc
     return full_path

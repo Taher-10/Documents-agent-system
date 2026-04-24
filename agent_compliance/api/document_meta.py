@@ -22,9 +22,9 @@ def derive_norms(flags: dict[str, bool]) -> list[str]:
     if flags.get("E", False):
         norms.append("ISO 14001")
     if flags.get("S", False):
-        norms.append("ISO 22000")
-    if flags.get("H", False):
         norms.append("ISO 45001")
+    if flags.get("H", False):
+        norms.append("ISO 22000")
     return norms
 
 

@@ -5,7 +5,7 @@
 - Request/response schemas with strict validation
 - Contract error model + HTTP status mapping
 - `DocumentMeta.from_request()` builder (request-only, no DB dependency)
-- Relative-path enforcement using `FILE_BASE_PATH`
+- Path resolution using `FILE_BASE_PATH` for relative paths (absolute paths are also supported)
 - Parse/orchestrator execution + quality gate + report shaping
 - OpenAPI snapshot and contract tests
 
@@ -20,7 +20,7 @@
 - `agent_compliance/api/document_meta.py`
   - `DocumentMeta` dataclass
   - `TYPE_LEVEL_MAP`
-  - `derive_norms(Q/E/S/H)`
+  - `derive_norms(Q/E/S/H)` with mapping: Q->9001, E->14001, S->45001, H->22000
 
 ## Runtime behavior summary
 1. Validate body (`AnalyzeRequest`).

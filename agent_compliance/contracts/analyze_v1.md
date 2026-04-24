@@ -29,7 +29,7 @@
     "E": true,
     "S": true,
     "H": false,
-    "file_path": "test/PRO-ENV-001.pdf"
+    "file_path": "/storage/docs/PRO-ENV-001.pdf"
   },
   "options": {
     "format": "json"
@@ -40,16 +40,19 @@
 ## Validation and Rules
 - `session.company_id`, `session.site_id`, `session.user_id` must be UUIDs.
 - `document.id` must be UUID.
-- `document.file_path` must be relative to `FILE_BASE_PATH`.
-- Absolute paths and path traversal (`..`) are rejected.
+- `document.file_path` can be relative or absolute.
+- Path traversal (`..`) is rejected.
 - Norms are derived by agent from `Q/E/S/H`.
+- Norm mapping: `Q -> ISO 9001`, `E -> ISO 14001`, `S -> ISO 45001`, `H -> ISO 22000`.
 - `options.format` allows `json|pdf|docx` in schema, but MVP accepts only `json`.
 
 ## Runtime Flow
 1. Validate request body.
 2. Reject unsupported format (`FORMAT_NOT_AVAILABLE`) if not `json`.
 3. Build `DocumentMeta` from request (`from_request()`), derive norms from flags.
-4. Resolve full path: `FILE_BASE_PATH / document.file_path`.
+4. Resolve full path:
+   - relative path -> `FILE_BASE_PATH / document.file_path`
+   - absolute path -> used as-is
 5. Validate file existence and extension (`.pdf`/`.docx`).
 6. Run compliance parser orchestrator (normal Python orchestrator, no LangGraph runtime).
 7. Assess parse quality; reject low quality (`LOW_QUALITY_DOCUMENT`) for tier-C/unreliable output.
@@ -63,7 +66,7 @@
   "doc_code": "PRO-ENV-001",
   "sections_analyzed": 12,
   "sections_skipped": 2,
-  "applicable_norms": ["ISO 14001", "ISO 22000"],
+  "applicable_norms": ["ISO 14001", "ISO 45001"],
   "report": {
     "executive_summary": "...",
     "coverage_matrix": [
@@ -78,7 +81,7 @@
     "action_plan": [
       {
         "action": "...",
-        "clause": "ISO 14001 7.5.3",
+        "clause": "ISO 45001 8.1",
         "priority": "HIGH",
         "section": "Document review"
       }
@@ -116,8 +119,8 @@ export FILE_BASE_PATH=/path/to/document/root
 ```
 
 Example resolved file:
-- Request: `"file_path": "test/PRO-ENV-001.pdf"`
-- Resolved: `${FILE_BASE_PATH}/test/PRO-ENV-001.pdf`
+- Request: `"file_path": "qalitas-mock-caller/storage/docs/PRO-ENV-001.pdf"` -> resolved under `${FILE_BASE_PATH}`
+- Request: `"file_path": "/storage/docs/PRO-ENV-001.pdf"` -> resolved as absolute
 
 ## Contract Artifacts
 - Human-readable contract: `agent_compliance/contracts/analyze_v1.md`

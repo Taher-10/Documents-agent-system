@@ -91,7 +91,7 @@ def test_invalid_uuid_returns_structured_error(client: TestClient) -> None:
     assert isinstance(payload.get("errors"), list)
 
 
-@pytest.mark.parametrize("bad_path", ["/abs/path/file.pdf", "../escape/file.pdf"])
+@pytest.mark.parametrize("bad_path", ["../escape/file.pdf"])
 def test_invalid_file_path_rejected(client: TestClient, bad_path: str) -> None:
     body = dict(MOCK_REQUEST)
     body["document"] = dict(MOCK_REQUEST["document"])
@@ -102,6 +102,30 @@ def test_invalid_file_path_rejected(client: TestClient, bad_path: str) -> None:
     assert response.status_code == 422
     payload = response.json()
     assert payload["code"] == "VALIDATION_ERROR"
+
+
+def test_absolute_file_path_is_accepted(client: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    source = tmp_path / "absolute.pdf"
+    source.write_text("dummy")
+
+    async def fake_run(_: str, thread_id: str | None = None) -> dict:
+        _ = thread_id
+        return {
+            "document_path": str(source),
+            "parse_result": ParseResult(source_path=str(source), text="ok", pages=2),
+            "sections": _success_sections(),
+            "error": None,
+            "status": "sections_filtered",
+        }
+
+    monkeypatch.setattr(api_app_mod, "_PIPELINE_RUNNER", fake_run)
+
+    body = dict(MOCK_REQUEST)
+    body["document"] = dict(MOCK_REQUEST["document"])
+    body["document"]["file_path"] = str(source)
+
+    response = client.post("/analyze", json=body)
+    assert response.status_code == 200
 
 
 def test_no_norms_returns_400(client: TestClient) -> None:
