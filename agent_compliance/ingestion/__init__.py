@@ -1,5 +1,6 @@
 from .document_meta import DocumentMeta
 from .payload_builder import build_payload
+from .qhse_reader import RetrievedSections, SectionReadMetadata, has_ingested_document, read_document_sections
 from .qhse_ingester import (
     DEFAULT_MIN_CONFIDENCE,
     QHSE_COLLECTION_NAME,
@@ -7,7 +8,6 @@ from .qhse_ingester import (
     IngestResult,
     IngestionError,
     ensure_qhse_collection,
-    has_ingested_document,
     ingest_document,
     ingest_document_async,
 )
@@ -24,10 +24,13 @@ __all__ = [
     "QHSE_COLLECTION_NAME",
     "QHSE_VECTOR_SIZE",
     "DEFAULT_MIN_CONFIDENCE",
+    "SectionReadMetadata",
+    "RetrievedSections",
     "IngestionError",
     "IngestResult",
     "ensure_qhse_collection",
     "has_ingested_document",
+    "read_document_sections",
     "ingest_document",
     "ingest_document_async",
 ]

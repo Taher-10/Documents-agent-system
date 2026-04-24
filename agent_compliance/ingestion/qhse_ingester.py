@@ -6,9 +6,6 @@ from typing import Awaitable, Callable, cast
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance,
-    FieldCondition,
-    Filter,
-    MatchValue,
     PayloadSchemaType,
     PointStruct,
     VectorParams,
@@ -19,6 +16,7 @@ from agent_compliance.pdf_parser.docling_parser import ParseResult
 
 from .document_meta import DocumentMeta
 from .payload_builder import build_payload
+from .qhse_reader import has_ingested_document
 from .utils import stable_uuid
 
 
@@ -127,31 +125,6 @@ def ensure_qhse_collection(
             )
 
     _ensure_payload_indexes(qdrant_client, collection)
-
-
-def _tenant_doc_filter(doc_id: str, company_id: str) -> Filter:
-    return Filter(
-        must=[
-            FieldCondition(key="doc_id", match=MatchValue(value=doc_id)),
-            FieldCondition(key="company_id", match=MatchValue(value=company_id)),
-        ]
-    )
-
-
-def has_ingested_document(
-    qdrant_client: QdrantClient,
-    *,
-    doc_id: str,
-    company_id: str,
-    collection: str = QHSE_COLLECTION_NAME,
-) -> bool:
-    result = qdrant_client.count(
-        collection_name=collection,
-        count_filter=_tenant_doc_filter(doc_id=doc_id, company_id=company_id),
-        exact=True,
-    )
-    count = int(getattr(result, "count", 0) or 0)
-    return count > 0
 
 
 def _base_result(

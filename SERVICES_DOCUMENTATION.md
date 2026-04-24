@@ -24,6 +24,8 @@
 | `document_meta.py` | API compatibility shim that re-exports ingestion metadata symbols |
 | `../ingestion/document_meta.py` | `DocumentMeta` dataclass + `from_request()` source-of-truth |
 | `../ingestion/type_mappings.py` | `TYPE_LEVEL_MAP` (26 labels) + `derive_norms` |
+| `../ingestion/qhse_ingester.py` | Write-through ingestion path (`ingest_document_async`) |
+| `../ingestion/qhse_reader.py` | Tenant-safe Qdrant read helpers (`has_ingested_document`, `read_document_sections`) |
 
 ### 1.2 Single Endpoint: `POST /analyze`
 
@@ -123,6 +125,7 @@
 | 422 | `VALIDATION_ERROR` | Pydantic model validation failure |
 | 422 | `UNSUPPORTED_FORMAT` | File extension is not `.pdf` or `.docx` |
 | 422 | `LOW_QUALITY_DOCUMENT` | Parser quality gate failed (tier-C / low confidence) |
+| 500 | `INGESTION_ERROR` | Write-through ingestion failed, or produced zero sections outside low-quality case |
 | 500 | `INTERNAL_ERROR` | Unhandled exception or pipeline error |
 
 ### 1.4 Runtime Execution Flow
@@ -149,15 +152,21 @@ POST /analyze
     │      absolute → used as-is
     │      └─ 404 FILE_NOT_FOUND / 422 UNSUPPORTED_FORMAT
     │
-    ├─ 6. _run_or_load_state(full_path)
+    ├─ 6. _ingest_if_needed(doc_meta)
+    │      Checks Qdrant cache by (doc_id, company_id) using has_ingested_document()
+    │      On miss, runs ingest_document_async() parse -> filter -> embed -> upsert
+    │      └─ 500 INGESTION_ERROR on ingestion failures
+    │      └─ 422 LOW_QUALITY_DOCUMENT when ingestion quality gate fails
+    │
+    ├─ 7. _run_or_load_state(full_path)
     │      Checks _STATE_CACHE first (keyed by path + mtime + size)
     │      If miss → runs compliance pipeline runner
     │      └─ 500 INTERNAL_ERROR on pipeline failure
     │
-    ├─ 7. assess_quality(sections)
+    ├─ 8. assess_quality(sections)
     │      └─ 422 LOW_QUALITY_DOCUMENT if tier-C / unreliable
     │
-    └─ 8. _build_report() → AnalyzeSuccessResponse → 200
+    └─ 9. _build_report() → AnalyzeSuccessResponse → 200
 ```
 
 ### 1.5 Key Components
@@ -196,6 +205,25 @@ Representative entries:
 | AUCUN | unknown | 0 |
 
 > **Unknown `type_designation` values fall back to `("unknown", 0)`** — no error is raised, so unrecognized types silently produce `doc_level=0`.
+
+#### Write-Through Ingestion Gate (`_ingest_if_needed`)
+
+- `/analyze` always runs ingestion gate before parser graph.
+- Cache hit: skip ingestion (`has_ingested_document(doc_id, company_id) == True`).
+- Cache miss: run async ingestion bridge (`ingest_document_async`) and enforce strict mapping:
+  - ingestion failure -> `500 INGESTION_ERROR`
+  - ingestion `low_quality_document` -> `422 LOW_QUALITY_DOCUMENT`
+- Success response contract remains unchanged.
+
+#### Guarded QHSE Reader (`ingestion/qhse_reader.py`)
+
+- `has_ingested_document(...)`: tenant-safe `count` guard with required `doc_id` + `company_id`.
+- `read_document_sections(...)`: tenant-safe `scroll` read with:
+  - required keyword-only `doc_id` + `company_id`
+  - deterministic ordering (`page_start`, then `section_id`)
+  - payload->`ParsedSection` mapping
+  - typed metadata return via `RetrievedSections` + `SectionReadMetadata`
+- Security policy test `agent_compliance/tests/test_qdrant_read_policy.py` blocks direct Qdrant read methods outside `qhse_reader.py`.
 
 #### In-Memory Result Cache (`_STATE_CACHE`)
 

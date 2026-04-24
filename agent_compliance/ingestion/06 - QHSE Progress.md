@@ -15,9 +15,9 @@ parent: "[[00 - Home]]"
 
 ## Current Snapshot
 - Overall status: `in-progress`
-- Current phase: `Phase 4 - Tenant-Safe Read Path and Security Hardening`
+- Current phase: `Phase 5 - Contract, Docs, and Validation Sync`
 - Last update: `2026-04-24`
-- Next milestone: `Phase 4 implementation kickoff (guarded read helpers + tenant filter audit)`
+- Next milestone: `Phase 5 documentation sync + final validation gate`
 
 ## Phase Progress
 
@@ -107,33 +107,52 @@ parent: "[[00 - Home]]"
 - Date: `2026-04-24`
 
 ### Phase 4 - Tenant-Safe Read Path and Security Hardening
-- Status: `not-started`
-- Completion: `0%`
+- Status: `completed`
+- Completion: `100%`
 - Completed items:
-- None.
+- Added `agent_compliance/ingestion/qhse_reader.py` as the guarded QHSE read entrypoint.
+- Added shared tenant/doc read guard `_tenant_doc_filter(doc_id, company_id)` used by all reader APIs.
+- Moved/centralized `has_ingested_document(...)` into `qhse_reader.py` and kept package-level compatibility export.
+- Added `read_document_sections(...)` with mandatory `doc_id` + `company_id`, tenant-safe `scroll`, deterministic ordering (`page_start`, `section_id`), payload->`ParsedSection` mapping, and typed metadata return.
+- Added `RetrievedSections` dataclass + `SectionReadMetadata` typed metadata contract.
+- Updated `agent_compliance/ingestion/qhse_ingester.py` to import guarded read helper instead of owning direct read logic.
+- Exported new read APIs/types from `agent_compliance/ingestion/__init__.py`.
+- Added tests:
+- `agent_compliance/tests/test_qhse_reader.py`
+- `agent_compliance/tests/test_qdrant_read_policy.py` (AST guard for forbidden direct Qdrant reads outside `qhse_reader.py`)
+- Validation passed:
+- Focused Phase 4 tests: `4` passed.
+- Related ingestion guard tests: `3` passed.
+- Full suite: `47` tests green (`agent_compliance/tests`).
+- End-to-end smoke passed (API + mock caller + local Qdrant):
+- Trigger calls returned `200` for docs `...0101` and `...0102` (repeat calls included).
+- Tenant-safe read checks: `found_ok=True`, `found_wrong=False`, `sections_ok=13`, `sections_wrong=0`.
+- Phase 4 reader performance baseline (warm local Qdrant):
+- `has_ingested_document`: avg `5.8ms`, p50 `5.6ms`, p95 `~7.2ms`.
+- `read_document_sections` (13 sections): avg `7.4-7.6ms`, p50 `~7.3ms`, p95 `~8.8ms`.
 - In-progress items:
 - None.
 - Next actions:
-- Implement guarded read helpers requiring `company_id`.
-- Run security audit over all ingestion retrieval queries.
+- Start Phase 5 contract/docs sync and finalize handoff evidence.
 - Blockers:
-- None currently (Phase 3 completed).
+- None currently.
 - Owner/date:
 - Owner: `session-agent`
 - Date: `2026-04-24`
 
 ### Phase 5 - Contract, Docs, and Validation Sync
-- Status: `not-started`
-- Completion: `0%`
+- Status: `in-progress`
+- Completion: `30%`
 - Completed items:
-- None.
+- Updated progress tracking with Phase 4 implementation artifacts and validation evidence.
+- Captured reader latency baseline and tenant-isolation smoke evidence for handoff.
 - In-progress items:
-- None.
+- Sync API/service docs with Phase 4 guarded read path (`qhse_reader`) and test policy.
 - Next actions:
-- Sync docs/snapshots/tests with final implemented behavior.
-- Finalize handoff details and unresolved risk register.
+- Finalize docs/snapshots alignment and run full validation gate.
+- Record final residual risks and mark MVP phase gate completion.
 - Blockers:
-- Depends on Phase 4 completion.
+- None currently.
 - Owner/date:
 - Owner: `session-agent`
 - Date: `2026-04-24`
@@ -151,6 +170,8 @@ parent: "[[00 - Home]]"
 | Phase 2 embedding failure policy is `skip and report`. | 2026-04-24 | Maintains document-level progress while exposing failures through counters. | `IngestResult` includes skipped embed-error counts; ingestion does not fail whole document for single-section failures. | Changing to fail-fast requires contract + test updates. |
 | Phase 3 API policy is strict write-through ingestion before parser flow. | 2026-04-24 | Ensures indexed QHSE sections exist at analysis time and prevents silent ingestion bypass. | `/analyze` now executes ingest-or-skip by `(doc_id, company_id)` prior to orchestrator run. | Any relaxation requires explicit API behavior decision and test updates. |
 | Phase 3 ingestion failure mapping uses `500 INGESTION_ERROR` (except low-quality -> `422`). | 2026-04-24 | Distinguishes server-side ingestion failures from existing low-quality parse semantics. | Error code path added without changing success response schema. | Any remap requires API tests and downstream caller handling updates. |
+| Phase 4 centralizes QHSE reads in `ingestion/qhse_reader.py` with mandatory `doc_id + company_id`. | 2026-04-24 | Enforces tenant-safe read contracts and avoids scattered raw read calls. | `has_ingested_document` and `read_document_sections` are now the approved QHSE read surface. | Any bypass requires explicit security review and policy exception. |
+| Phase 4 introduces AST policy test to block direct Qdrant reads outside guarded reader module. | 2026-04-24 | Prevents accidental unsafe read usage from reappearing in production modules. | CI/test gate fails if forbidden methods (`count/scroll/search/query_points/retrieve`) are called outside allowed module. | Allowed caller list changes only with explicit design/security update. |
 
 ## Session Handoff
 
@@ -161,7 +182,7 @@ parent: "[[00 - Home]]"
 - Live tracker: `06 - QHSE Progress.md`
 
 ### Pending Tasks
-- Start implementation at Phase 4 tasks.
+- Finalize Phase 5 docs/contract sync.
 - Update tracker at each phase gate or blocker.
 - Keep decisions log synchronized with any scope or behavior changes.
 
@@ -183,6 +204,7 @@ parent: "[[00 - Home]]"
 - Tenant guardrail risk if any direct Qdrant call bypasses filtered helper APIs.
 - Contract drift risk if behavior changes later without synchronized docs/tests/snapshots.
 - Runtime dependency risk (Qdrant/embedder availability) can affect strict write-through API latency and failure rate.
+- Cold-start request latency can spike on first ingest/parse of a document; steady-state read latency is low.
 
 ## Important Details
 - Qdrant target collection for QHSE ingestion: `qhse_sections`.
@@ -190,6 +212,7 @@ parent: "[[00 - Home]]"
 - Expected embedding vector size: `1024`.
 - Phase 2 embedding integration strategy: injected `embed_fn(text) -> list[float]` callable.
 - Phase 3 API integration strategy: strict write-through ingest-or-skip before parser/orchestrator report flow.
+- Phase 4 read strategy: guarded reader module (`qhse_reader`) with mandatory tenant/doc filter for Qdrant reads.
 - Tenant guardrail: all Qdrant read queries must include `company_id` filter.
 - Contract-sensitive rule: `H -> ISO 45001`; `S` and `H` deduplicate to one `ISO 45001` in derived norms.
 - This documentation task introduces no API schema change by itself.
