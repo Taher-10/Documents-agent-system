@@ -67,13 +67,17 @@ Implement parse-filter-embed-upsert writer for QHSE sections into Qdrant.
 - Add `payload_builder.py` for section + parse-result + meta payload assembly.
 - Add `utils.py` with deterministic `stable_uuid(doc_id, section_id)`.
 - Add `qhse_ingester.py` with `ingest_document()` and ingest result reporting.
+- Use injected `embed_fn(text) -> list[float]` for embedding integration (backend wiring deferred to later phase integration).
 - Enforce quality/confidence ingestion filters (`tier != C`, confidence threshold).
+- Enforce strict vector-size guard (`1024`) at both collection validation and section embedding output.
+- Add `has_ingested_document(doc_id, company_id)` helper with mandatory tenant filter.
 - Ensure collection/index creation for `company_id`, `site_id`, `section_type`, `doc_type`, `doc_level`.
 
 ### Acceptance Criteria
 - Ingestion upserts deterministic point IDs.
 - Payload contains tenant fields and required section/document metadata.
 - Collection schema and indexes exist for tenant and retrieval filtering.
+- Embed failures are skipped and reported in ingestion counters without aborting whole-document ingestion.
 
 ### Risks
 - Vector-size mismatch if embedder configuration diverges from expected model output.
@@ -164,4 +168,3 @@ Finalize documentation and verification for stable cross-session operation.
 ### Exit Criteria
 - Phase statuses and artifacts are fully updated in `06 - QHSE Progress.md`.
 - MVP ingestion documentation is decision-complete for implementation and handoff.
-

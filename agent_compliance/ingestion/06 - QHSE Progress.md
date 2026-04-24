@@ -15,9 +15,9 @@ parent: "[[00 - Home]]"
 
 ## Current Snapshot
 - Overall status: `in-progress`
-- Current phase: `Phase 2 - Qdrant Ingestion Writer`
+- Current phase: `Phase 3 - API Integration (Write-Through)`
 - Last update: `2026-04-24`
-- Next milestone: `Phase 2 implementation kickoff (payload builder + ingester skeleton)`
+- Next milestone: `Phase 3 implementation kickoff (/analyze ingest-or-skip wiring + embedder adapter)`
 
 ## Phase Progress
 
@@ -35,7 +35,7 @@ parent: "[[00 - Home]]"
 - In-progress items:
 - None.
 - Next actions:
-- Start Phase 2 implementation (Qdrant payload + ingest writer).
+- None.
 - Blockers:
 - None currently.
 - Owner/date:
@@ -43,17 +43,30 @@ parent: "[[00 - Home]]"
 - Date: `2026-04-24`
 
 ### Phase 2 - Qdrant Ingestion Writer
-- Status: `not-started`
-- Completion: `0%`
+- Status: `completed`
+- Completion: `100%`
 - Completed items:
-- None.
+- Added `agent_compliance/ingestion/payload_builder.py` for section + parse-result + metadata payload assembly.
+- Added `agent_compliance/ingestion/utils.py` with deterministic `stable_uuid(doc_id, section_id)`.
+- Added `agent_compliance/ingestion/qhse_ingester.py` with:
+- `ingest_document()` parse/filter/embed/upsert flow.
+- `ensure_qhse_collection()` collection + payload-index ensure flow.
+- `has_ingested_document(doc_id, company_id)` helper enforcing tenant filter.
+- Added strict vector-size guard (`1024`) for collection compatibility and embedding output shape.
+- Added ingestion counters and reasons in `IngestResult` (ingested/skipped breakdown).
+- Exported ingestion writer interfaces from `agent_compliance/ingestion/__init__.py`.
+- Added tests `agent_compliance/tests/test_qhse_ingester.py` (`9` tests).
+- Validation passed: `38` tests green (`agent_compliance/tests`).
+- Smoke test passed against local Qdrant (`qhse_sections`):
+- First ingest: `total_sections=14`, `ingested=13`, `skipped_empty_text=1`, `has_ingested_document=True`, tenant/doc count=`13`.
+- Re-ingest: tenant/doc count remained `13` (idempotent upsert, no duplication).
 - In-progress items:
 - None.
 - Next actions:
-- Add payload builder, deterministic ID utility, and ingester module.
-- Define collection/index ensure flow for `qhse_sections`.
+- Start Phase 3 API write-through integration (`/analyze` ingest-or-skip path).
+- Add embedder adapter from `rag` async `embed_text` to ingestion writer callable contract.
 - Blockers:
-- Depends on Phase 1 completion.
+- None currently.
 - Owner/date:
 - Owner: `session-agent`
 - Date: `2026-04-24`
@@ -69,7 +82,7 @@ parent: "[[00 - Home]]"
 - Add ingest-or-skip integration in `/analyze`.
 - Validate unchanged response contract.
 - Blockers:
-- Depends on Phase 2 completion.
+- None currently (Phase 2 completed).
 - Owner/date:
 - Owner: `session-agent`
 - Date: `2026-04-24`
@@ -114,6 +127,9 @@ parent: "[[00 - Home]]"
 | `H` maps to `ISO 45001`; `S` and `H` deduplicate to one norm. | 2026-04-24 | Aligns locked ingestion decision and safety/health standard model. | Contract-sensitive behavior for `applicable_norms` and report matrix logic. | Any change requires contract/doc/test updates in same change set. |
 | Tenant filter guardrail is mandatory on every Qdrant read. | 2026-04-24 | Prevents cross-tenant data leakage in single-collection model. | Affects all retrieval helpers and security verification requirements. | Non-negotiable; no bypass allowed. |
 | Keep `04 - QHSE Ingestion Plan.md` as historical reference. | 2026-04-24 | Preserves original context and decisions trail. | New work tracks on files `05` and `06`. | Archive/merge only via explicit request. |
+| Phase 2 ingestion writer uses injected `embed_fn(text) -> list[float]` contract. | 2026-04-24 | Keeps writer backend-agnostic and testable; API layer owns runtime embedder lifecycle. | Requires Phase 3 async adapter when wiring `rag` `EmbedderService.embed_text`. | Change requires coordinated updates in writer + API integration tests. |
+| Phase 2 vector-size policy is strict fail at `1024` mismatch. | 2026-04-24 | Prevents silent mixing of incompatible vectors in `qhse_sections`. | Ingestion raises explicit error on incompatible collection/model output dimensions. | Any relaxation requires explicit migration/data integrity review. |
+| Phase 2 embedding failure policy is `skip and report`. | 2026-04-24 | Maintains document-level progress while exposing failures through counters. | `IngestResult` includes skipped embed-error counts; ingestion does not fail whole document for single-section failures. | Changing to fail-fast requires contract + test updates. |
 
 ## Session Handoff
 
@@ -124,7 +140,7 @@ parent: "[[00 - Home]]"
 - Live tracker: `06 - QHSE Progress.md`
 
 ### Pending Tasks
-- Start implementation at Phase 2 tasks.
+- Start implementation at Phase 3 tasks.
 - Update tracker at each phase gate or blocker.
 - Keep decisions log synchronized with any scope or behavior changes.
 
@@ -145,11 +161,13 @@ parent: "[[00 - Home]]"
 - Documentation/code drift if tracker is not updated when behavior changes.
 - Tenant guardrail risk if any direct Qdrant call bypasses filtered helper APIs.
 - Contract drift risk if behavior changes later without synchronized docs/tests/snapshots.
+- Async/sync bridge risk during Phase 3 when adapting `rag` async embedder to ingestion `embed_fn` contract.
 
 ## Important Details
 - Qdrant target collection for QHSE ingestion: `qhse_sections`.
 - Embedding model target: `Qwen3-Embedding`.
 - Expected embedding vector size: `1024`.
+- Phase 2 embedding integration strategy: injected `embed_fn(text) -> list[float]` callable.
 - Tenant guardrail: all Qdrant read queries must include `company_id` filter.
 - Contract-sensitive rule: `H -> ISO 45001`; `S` and `H` deduplicate to one `ISO 45001` in derived norms.
 - This documentation task introduces no API schema change by itself.
