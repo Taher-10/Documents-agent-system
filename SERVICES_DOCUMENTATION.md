@@ -21,7 +21,9 @@
 |---|---|
 | `app.py` | App factory, endpoint handler, error handlers, pipeline orchestration |
 | `contracts.py` | All Pydantic request/response models |
-| `document_meta.py` | `DocumentMeta` dataclass + norm-derivation logic |
+| `document_meta.py` | API compatibility shim that re-exports ingestion metadata symbols |
+| `../ingestion/document_meta.py` | `DocumentMeta` dataclass + `from_request()` source-of-truth |
+| `../ingestion/type_mappings.py` | `TYPE_LEVEL_MAP` (26 labels) + `derive_norms` |
 
 ### 1.2 Single Endpoint: `POST /analyze`
 
@@ -136,7 +138,8 @@ POST /analyze
     │
     ├─ 3. Build DocumentMeta.from_request()
     │      └─ Derives applicable norms from Q/E/S/H flags
-    │         Q→ISO 9001, E→ISO 14001, S→ISO 45001, H→ISO 22000
+    │         Q→ISO 9001, E→ISO 14001, S→ISO 45001, H→ISO 45001
+    │         S/H are deduplicated to one ISO 45001
     │
     ├─ 4. Guard: applicable_norms must not be empty
     │      └─ 400 NO_NORMS
@@ -159,9 +162,10 @@ POST /analyze
 
 ### 1.5 Key Components
 
-#### `DocumentMeta` (`document_meta.py`)
+#### `DocumentMeta` (`ingestion/document_meta.py`)
 
 Internal dataclass built from the request. Never touches the database.
+`api/document_meta.py` is a compatibility re-export layer.
 
 ```python
 @dataclass(slots=True)
@@ -172,23 +176,24 @@ class DocumentMeta:
     version: str
     file_path: str
     doc_type: str       # derived from TYPE_LEVEL_MAP
-    doc_level: int      # 1=policy/process, 2=procedure, 3=instruction, 4=record
+    doc_level: int      # 1..5 hierarchy levels, unknown fallback = 0
     applicable_norms: list[str]
     company_id: str
     site_id: str
 ```
 
 **`TYPE_LEVEL_MAP`** — maps French `type_designation` to `(doc_type, doc_level)`:
+Full mapping is defined in `agent_compliance/ingestion/type_mappings.py` (26 labels).
+Representative entries:
 
 | type_designation | doc_type | doc_level |
 |---|---|---|
-| Procédure | procedure | 2 |
-| Processus | process | 1 |
-| Instruction | instruction | 3 |
-| Mode opératoire | work_instruction | 3 |
-| Enregistrement | record | 4 |
-| Politique | policy | 1 |
-| Manuel | manual | 1 |
+| Politique qualité | policy | 1 |
+| Plan Qualité | manual | 2 |
+| Procédure | procedure | 3 |
+| Mode opératoire | work_instruction | 4 |
+| Formulaire | form | 5 |
+| AUCUN | unknown | 0 |
 
 > **Unknown `type_designation` values fall back to `("unknown", 0)`** — no error is raised, so unrecognized types silently produce `doc_level=0`.
 
@@ -245,6 +250,7 @@ export FILE_BASE_PATH=/absolute/path/to/docs/root
 | `qalitas_mock_caller/config.py` | `Settings` dataclass + `load_settings()` from env |
 | `qalitas_mock_caller/repository.py` | `QalitasRepository` — SQLite queries |
 | `db/init_mock_sqlite.sql` | SQLite DDL + seed data |
+| `scripts/seed_and_smoke.py` | Deterministic DB seeding + one-call smoke runner (`preview` + `trigger-analyze`) |
 | `init.sql` | Full PostgreSQL schema (production reference) |
 | `.env.example` | All env vars with example values |
 | `tests/test_app.py` | Test suite (7 tests) |
@@ -428,6 +434,33 @@ curl -X POST "http://localhost:8100/trigger-analyze?document_id=<uuid>"
 | `test_db_seed_created` | SQLite DB file created and contains ≥1 InternalDocs row |
 
 All tests use `tmp_path` (pytest fixture) for isolated DB and docs directories. Agent calls are monkeypatched — no real agent needed.
+
+### 2.9 Seed + Smoke Utility (`scripts/seed_and_smoke.py`)
+
+Purpose: seed deterministic mock records in `InternalDocs` and run one end-to-end smoke call through the mock caller transport path.
+
+What it does:
+- Applies `QALITAS_DB_INIT_SQL` via `executescript` (idempotent).
+- Upserts two deterministic docs:
+  - Doc A: `00000000-0000-0000-0000-000000000101` (`H=true`, `S=false`, `Q=false`, `E=false`) — default smoke target.
+  - Doc B: `00000000-0000-0000-0000-000000000102` (`S=true`, `H=true`, `Q=false`, `E=false`) — future regression target.
+- Calls `GET /preview-analyze-request?document_id=...` and validates Q/E/S/H flags.
+- Calls `POST /trigger-analyze?document_id=...` unless `--seed-only` is set.
+
+Usage:
+
+```bash
+# Seed only
+.venv/bin/python qalitas-mock-caller/scripts/seed_and_smoke.py --seed-only
+
+# Seed + one smoke call (mock caller must already run on :8100)
+.venv/bin/python qalitas-mock-caller/scripts/seed_and_smoke.py
+```
+
+`--seed-only` performs DB initialization + dataset upsert only and does not require any running HTTP service.
+
+Exit behavior:
+- Returns non-zero on seeding failure, preview mismatch, transport failure, or upstream error status.
 
 ---
 

@@ -43,7 +43,8 @@
 - `document.file_path` can be relative or absolute.
 - Path traversal (`..`) is rejected.
 - Norms are derived by agent from `Q/E/S/H`.
-- Norm mapping: `Q -> ISO 9001`, `E -> ISO 14001`, `S -> ISO 45001`, `H -> ISO 22000`.
+- Norm mapping: `Q -> ISO 9001`, `E -> ISO 14001`, `S -> ISO 45001`, `H -> ISO 45001`.
+- `S` and `H` deduplicate to one `ISO 45001` in `applicable_norms`.
 - `options.format` allows `json|pdf|docx` in schema, but MVP accepts only `json`.
 
 ## Runtime Flow

@@ -47,6 +47,45 @@ Trigger call:
 curl -X POST http://localhost:8100/trigger-analyze
 ```
 
+## Seed + Smoke Script
+
+Reusable utility script to seed deterministic mock DB data and run one integration smoke call through the mock caller.
+
+Script path:
+
+```bash
+qalitas-mock-caller/scripts/seed_and_smoke.py
+```
+
+Default scenarios seeded into `InternalDocs`:
+- Doc A (default smoke target): `00000000-0000-0000-0000-000000000101` with `H=true, S=false, Q=false, E=false`
+- Doc B (future regression): `00000000-0000-0000-0000-000000000102` with `S=true, H=true, Q=false, E=false`
+
+Seed only (no trigger call):
+
+```bash
+.venv/bin/python qalitas-mock-caller/scripts/seed_and_smoke.py --seed-only
+```
+
+Seed + one smoke call via mock endpoint (`POST /trigger-analyze?document_id=...`):
+
+```bash
+.venv/bin/python qalitas-mock-caller/scripts/seed_and_smoke.py
+```
+
+Target Doc B explicitly:
+
+```bash
+.venv/bin/python qalitas-mock-caller/scripts/seed_and_smoke.py \
+  --document-id 00000000-0000-0000-0000-000000000102
+```
+
+Notes:
+- `--seed-only` does not require the mock caller service to be running.
+- Smoke mode assumes mock caller is running at `http://127.0.0.1:8100`.
+- The script validates preview payload flags before trigger call.
+- Exit code is non-zero on seeding errors, preview validation failures, or smoke transport/upstream failures.
+
 ## Test
 ```bash
 .venv/bin/pytest -q qalitas-mock-caller/tests/test_app.py

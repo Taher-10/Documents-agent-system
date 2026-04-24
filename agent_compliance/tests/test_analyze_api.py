@@ -139,6 +139,60 @@ def test_no_norms_returns_400(client: TestClient) -> None:
     assert response.json()["code"] == "NO_NORMS"
 
 
+def test_h_only_maps_to_iso_45001(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_run(_: str, thread_id: str | None = None) -> dict:
+        _ = thread_id
+        return {
+            "document_path": "ignored",
+            "parse_result": ParseResult(source_path="x", text="ok", pages=2),
+            "sections": _success_sections(),
+            "error": None,
+            "status": "sections_filtered",
+        }
+
+    monkeypatch.setattr(api_app_mod, "_PIPELINE_RUNNER", fake_run)
+
+    body = dict(MOCK_REQUEST)
+    body["document"] = dict(MOCK_REQUEST["document"])
+    body["document"].update({"Q": False, "E": False, "S": False, "H": True})
+
+    response = client.post("/analyze", json=body)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["applicable_norms"] == ["ISO 45001"]
+    assert [item["clause"] for item in payload["report"]["coverage_matrix"]] == ["ISO 45001 8.1"]
+    assert all("ISO 22000" not in item["clause"] for item in payload["report"]["coverage_matrix"])
+
+
+def test_s_and_h_are_deduplicated_to_single_norm(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_run(_: str, thread_id: str | None = None) -> dict:
+        _ = thread_id
+        return {
+            "document_path": "ignored",
+            "parse_result": ParseResult(source_path="x", text="ok", pages=2),
+            "sections": _success_sections(),
+            "error": None,
+            "status": "sections_filtered",
+        }
+
+    monkeypatch.setattr(api_app_mod, "_PIPELINE_RUNNER", fake_run)
+
+    body = dict(MOCK_REQUEST)
+    body["document"] = dict(MOCK_REQUEST["document"])
+    body["document"].update({"Q": False, "E": False, "S": True, "H": True})
+
+    response = client.post("/analyze", json=body)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["applicable_norms"] == ["ISO 45001"]
+    assert len(payload["report"]["coverage_matrix"]) == 1
+
+
 @pytest.mark.parametrize("fmt", ["pdf", "docx"])
 def test_non_json_format_not_available(client: TestClient, fmt: str) -> None:
     body = dict(MOCK_REQUEST)

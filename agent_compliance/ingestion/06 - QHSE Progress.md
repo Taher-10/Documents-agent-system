@@ -15,25 +15,27 @@ parent: "[[00 - Home]]"
 
 ## Current Snapshot
 - Overall status: `in-progress`
-- Current phase: `Phase 1 - Domain Alignment and Source of Truth`
+- Current phase: `Phase 2 - Qdrant Ingestion Writer`
 - Last update: `2026-04-24`
-- Next milestone: `Phase 1 exit criteria met (mapping/domain alignment verified by tests)`
+- Next milestone: `Phase 2 implementation kickoff (payload builder + ingester skeleton)`
 
 ## Phase Progress
 
 ### Phase 1 - Domain Alignment and Source of Truth
-- Status: `in-progress`
-- Completion: `10%`
+- Status: `completed`
+- Completion: `100%`
 - Completed items:
-- Plan and scope locked in `05 - QHSE Ingestion Plan (MVP Phases).md`.
-- Mapping direction confirmed: `H -> ISO 45001`, `S/H` deduplication.
+- Added `agent_compliance/ingestion/type_mappings.py` as source of truth (`TYPE_LEVEL_MAP`, `NORM_FLAG_MAP`, `derive_norms`).
+- Added `agent_compliance/ingestion/document_meta.py` with `DocumentMeta.from_request()`.
+- Added `agent_compliance/ingestion/__init__.py` exports.
+- Converted `agent_compliance/api/document_meta.py` to compatibility re-export shim.
+- Added tests `agent_compliance/tests/test_ingestion_document_meta.py`.
+- Added API regression tests for `H=true` and `S/H` dedup behavior.
+- Validation passed: `29` tests green (`test_ingestion_document_meta.py` + `test_analyze_api.py`).
 - In-progress items:
-- Prepare ingestion-domain module structure for metadata and mappings.
-- Audit API imports to remove reliance on API-local mapping source.
+- None.
 - Next actions:
-- Implement `type_mappings.py` and ingestion `document_meta.py`.
-- Wire API to ingestion-domain `DocumentMeta`.
-- Add/update tests for `derive_norms` and type fallback behavior.
+- Start Phase 2 implementation (Qdrant payload + ingest writer).
 - Blockers:
 - None currently.
 - Owner/date:
@@ -122,7 +124,7 @@ parent: "[[00 - Home]]"
 - Live tracker: `06 - QHSE Progress.md`
 
 ### Pending Tasks
-- Start implementation at Phase 1 tasks.
+- Start implementation at Phase 2 tasks.
 - Update tracker at each phase gate or blocker.
 - Keep decisions log synchronized with any scope or behavior changes.
 
@@ -142,7 +144,7 @@ parent: "[[00 - Home]]"
 ### Known Risks
 - Documentation/code drift if tracker is not updated when behavior changes.
 - Tenant guardrail risk if any direct Qdrant call bypasses filtered helper APIs.
-- Contract mismatch risk if `H` mapping change is implemented without synchronized tests/snapshots.
+- Contract drift risk if behavior changes later without synchronized docs/tests/snapshots.
 
 ## Important Details
 - Qdrant target collection for QHSE ingestion: `qhse_sections`.
@@ -151,4 +153,3 @@ parent: "[[00 - Home]]"
 - Tenant guardrail: all Qdrant read queries must include `company_id` filter.
 - Contract-sensitive rule: `H -> ISO 45001`; `S` and `H` deduplicate to one `ISO 45001` in derived norms.
 - This documentation task introduces no API schema change by itself.
-
