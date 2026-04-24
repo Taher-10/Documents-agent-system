@@ -15,9 +15,9 @@ parent: "[[00 - Home]]"
 
 ## Current Snapshot
 - Overall status: `in-progress`
-- Current phase: `Phase 3 - API Integration (Write-Through)`
+- Current phase: `Phase 4 - Tenant-Safe Read Path and Security Hardening`
 - Last update: `2026-04-24`
-- Next milestone: `Phase 3 implementation kickoff (/analyze ingest-or-skip wiring + embedder adapter)`
+- Next milestone: `Phase 4 implementation kickoff (guarded read helpers + tenant filter audit)`
 
 ## Phase Progress
 
@@ -72,17 +72,36 @@ parent: "[[00 - Home]]"
 - Date: `2026-04-24`
 
 ### Phase 3 - API Integration (Write-Through)
-- Status: `not-started`
-- Completion: `0%`
+- Status: `completed`
+- Completion: `100%`
 - Completed items:
-- None.
+- Added write-through ingestion integration in `agent_compliance/api/app.py`:
+- Ingest-or-skip behavior before parser/orchestrator execution.
+- Cache check by `(doc_id, company_id)` using `has_ingested_document`.
+- Strict ingestion failure mapping to `500 INGESTION_ERROR`.
+- `low_quality_document` ingestion result mapped to `422 LOW_QUALITY_DOCUMENT`.
+- Added lazy process-level clients for Qdrant and embedder runtime.
+- Added shutdown cleanup for embedder lifecycle.
+- Added async ingestion bridge `ingest_document_async(...)` in `agent_compliance/ingestion/qhse_ingester.py`.
+- Exported async ingestion API via `agent_compliance/ingestion/__init__.py`.
+- Extended API tests in `agent_compliance/tests/test_analyze_api.py` with:
+- Cache miss ingests and keeps response contract unchanged.
+- Cache hit skips ingestion path.
+- Ingestion exception -> `500 INGESTION_ERROR`.
+- Ingestion low-quality -> `422 LOW_QUALITY_DOCUMENT`.
+- Zero-ingested non-low-quality -> `500 INGESTION_ERROR`.
+- Validation passed: `43` tests green (`agent_compliance/tests`).
+- End-to-end smoke passed via `qalitas-mock-caller` -> `/analyze` -> `qhse_sections`:
+- First call status `200`, second call status `200` for same document.
+- Count behavior: `0 -> 13 -> 13` (ingest once, no duplication).
+- Deterministic ID check passed (`stable_uuid(doc_id, section_id)` match).
+- Required payload fields + collection filter schema keys verified.
 - In-progress items:
 - None.
 - Next actions:
-- Add ingest-or-skip integration in `/analyze`.
-- Validate unchanged response contract.
+- Start Phase 4 security hardening tasks.
 - Blockers:
-- None currently (Phase 2 completed).
+- None currently.
 - Owner/date:
 - Owner: `session-agent`
 - Date: `2026-04-24`
@@ -98,7 +117,7 @@ parent: "[[00 - Home]]"
 - Implement guarded read helpers requiring `company_id`.
 - Run security audit over all ingestion retrieval queries.
 - Blockers:
-- Depends on Phase 3 completion.
+- None currently (Phase 3 completed).
 - Owner/date:
 - Owner: `session-agent`
 - Date: `2026-04-24`
@@ -130,6 +149,8 @@ parent: "[[00 - Home]]"
 | Phase 2 ingestion writer uses injected `embed_fn(text) -> list[float]` contract. | 2026-04-24 | Keeps writer backend-agnostic and testable; API layer owns runtime embedder lifecycle. | Requires Phase 3 async adapter when wiring `rag` `EmbedderService.embed_text`. | Change requires coordinated updates in writer + API integration tests. |
 | Phase 2 vector-size policy is strict fail at `1024` mismatch. | 2026-04-24 | Prevents silent mixing of incompatible vectors in `qhse_sections`. | Ingestion raises explicit error on incompatible collection/model output dimensions. | Any relaxation requires explicit migration/data integrity review. |
 | Phase 2 embedding failure policy is `skip and report`. | 2026-04-24 | Maintains document-level progress while exposing failures through counters. | `IngestResult` includes skipped embed-error counts; ingestion does not fail whole document for single-section failures. | Changing to fail-fast requires contract + test updates. |
+| Phase 3 API policy is strict write-through ingestion before parser flow. | 2026-04-24 | Ensures indexed QHSE sections exist at analysis time and prevents silent ingestion bypass. | `/analyze` now executes ingest-or-skip by `(doc_id, company_id)` prior to orchestrator run. | Any relaxation requires explicit API behavior decision and test updates. |
+| Phase 3 ingestion failure mapping uses `500 INGESTION_ERROR` (except low-quality -> `422`). | 2026-04-24 | Distinguishes server-side ingestion failures from existing low-quality parse semantics. | Error code path added without changing success response schema. | Any remap requires API tests and downstream caller handling updates. |
 
 ## Session Handoff
 
@@ -140,7 +161,7 @@ parent: "[[00 - Home]]"
 - Live tracker: `06 - QHSE Progress.md`
 
 ### Pending Tasks
-- Start implementation at Phase 3 tasks.
+- Start implementation at Phase 4 tasks.
 - Update tracker at each phase gate or blocker.
 - Keep decisions log synchronized with any scope or behavior changes.
 
@@ -161,13 +182,14 @@ parent: "[[00 - Home]]"
 - Documentation/code drift if tracker is not updated when behavior changes.
 - Tenant guardrail risk if any direct Qdrant call bypasses filtered helper APIs.
 - Contract drift risk if behavior changes later without synchronized docs/tests/snapshots.
-- Async/sync bridge risk during Phase 3 when adapting `rag` async embedder to ingestion `embed_fn` contract.
+- Runtime dependency risk (Qdrant/embedder availability) can affect strict write-through API latency and failure rate.
 
 ## Important Details
 - Qdrant target collection for QHSE ingestion: `qhse_sections`.
 - Embedding model target: `Qwen3-Embedding`.
 - Expected embedding vector size: `1024`.
 - Phase 2 embedding integration strategy: injected `embed_fn(text) -> list[float]` callable.
+- Phase 3 API integration strategy: strict write-through ingest-or-skip before parser/orchestrator report flow.
 - Tenant guardrail: all Qdrant read queries must include `company_id` filter.
 - Contract-sensitive rule: `H -> ISO 45001`; `S` and `H` deduplicate to one `ISO 45001` in derived norms.
 - This documentation task introduces no API schema change by itself.

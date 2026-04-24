@@ -9,6 +9,7 @@ from .qhse_ingester import (
     ensure_qhse_collection,
     has_ingested_document,
     ingest_document,
+    ingest_document_async,
 )
 from .type_mappings import NORM_FLAG_MAP, TYPE_LEVEL_MAP, derive_norms
 from .utils import stable_uuid
@@ -28,4 +29,5 @@ __all__ = [
     "ensure_qhse_collection",
     "has_ingested_document",
     "ingest_document",
+    "ingest_document_async",
 ]

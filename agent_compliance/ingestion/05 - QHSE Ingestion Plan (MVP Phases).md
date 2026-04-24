@@ -99,6 +99,10 @@ Integrate ingestion path into `/analyze` with minimal behavior regression.
 ### Implementation Tasks
 - Add cache check by `(doc_id, company_id)` before ingesting.
 - In `/analyze`: if not ingested, run ingester; if already ingested, skip upsert path.
+- Add lazy process-level runtime clients for Qdrant and embedder service in API layer.
+- Add async ingestion bridge (`ingest_document_async`) to avoid sync-over-async embedding calls in FastAPI.
+- Map strict ingestion failures to structured API errors (`500 INGESTION_ERROR`).
+- Map ingestion `low_quality_document` result to existing `422 LOW_QUALITY_DOCUMENT`.
 - Keep parser/orchestrator report shaping behavior unchanged.
 - Bound or replace unbounded process cache behavior where needed.
 
@@ -106,6 +110,7 @@ Integrate ingestion path into `/analyze` with minimal behavior regression.
 - `/analyze` remains synchronous and returns existing response shape.
 - Repeated analysis of unchanged docs avoids redundant ingestion work.
 - Ingestion path failures map to structured API error handling.
+- No request/response schema changes are required for Phase 3 integration.
 
 ### Risks
 - Latency regression if ingestion always runs and cache checks are weak.

@@ -21,6 +21,11 @@ from .contracts import (
     ReportPayload,
 )
 from .document_meta import DocumentMeta
+from agent_compliance.ingestion.qhse_ingester import (
+    IngestResult,
+    has_ingested_document,
+    ingest_document_async,
+)
 
 
 @dataclass(slots=True)
@@ -32,6 +37,8 @@ class ApiError(Exception):
 
 _STATE_CACHE: dict[str, dict[str, Any]] = {}
 _PIPELINE_RUNNER = None
+_QDRANT_CLIENT = None
+_EMBEDDER_SERVICE = None
 
 
 def _get_pipeline_runner():
@@ -41,6 +48,67 @@ def _get_pipeline_runner():
 
         _PIPELINE_RUNNER = run_pipeline
     return _PIPELINE_RUNNER
+
+
+def _get_qdrant_client():
+    global _QDRANT_CLIENT
+    if _QDRANT_CLIENT is None:
+        from qdrant_client import QdrantClient
+
+        host = os.getenv("QDRANT_HOST", "localhost")
+        port = int(os.getenv("QDRANT_PORT", "6333"))
+        api_key = os.getenv("QDRANT_API_KEY") or None
+        _QDRANT_CLIENT = QdrantClient(host=host, port=port, api_key=api_key)
+    return _QDRANT_CLIENT
+
+
+def _get_embedder_service():
+    global _EMBEDDER_SERVICE
+    if _EMBEDDER_SERVICE is None:
+        from rag.ingestion_pipeline.embedder import EmbedderService
+
+        _EMBEDDER_SERVICE = EmbedderService()
+    return _EMBEDDER_SERVICE
+
+
+async def _ingest_if_needed(meta: DocumentMeta) -> IngestResult | None:
+    try:
+        qdrant_client = _get_qdrant_client()
+        if has_ingested_document(
+            qdrant_client,
+            doc_id=meta.doc_id,
+            company_id=meta.company_id,
+        ):
+            return None
+
+        embedder = _get_embedder_service()
+
+        async def _embed_text(text: str) -> list[float]:
+            return await embedder.embed_text(text)
+
+        result = await ingest_document_async(
+            meta,
+            qdrant_client,
+            embed_fn=_embed_text,
+        )
+    except Exception as exc:
+        raise ApiError(500, "INGESTION_ERROR", f"Ingestion failed: {exc}") from exc
+
+    if result.reason == "low_quality_document":
+        raise ApiError(
+            422,
+            "LOW_QUALITY_DOCUMENT",
+            (
+                "Document could not be parsed reliably "
+                f"(quality_tier={result.quality_tier}, min_confidence={result.min_confidence:.2f})"
+            ),
+        )
+
+    if result.ingested <= 0:
+        reason = result.reason or "unknown"
+        raise ApiError(500, "INGESTION_ERROR", f"Ingestion produced no sections (reason={reason})")
+
+    return result
 
 
 def _file_base_path() -> Path:
@@ -185,6 +253,21 @@ def create_app() -> FastAPI:
         description="QALITAS -> Agent IA 2 synchronous document analyze contract.",
     )
 
+    @app.on_event("shutdown")
+    async def on_shutdown() -> None:
+        global _QDRANT_CLIENT, _EMBEDDER_SERVICE
+
+        if _EMBEDDER_SERVICE is not None:
+            try:
+                await _EMBEDDER_SERVICE.close()
+            finally:
+                _EMBEDDER_SERVICE = None
+
+        close = getattr(_QDRANT_CLIENT, "close", None)
+        if callable(close):
+            close()
+        _QDRANT_CLIENT = None
+
     @app.exception_handler(ApiError)
     async def handle_api_error(_: Request, exc: ApiError) -> JSONResponse:
         payload = ErrorResponse(code=exc.code, detail=exc.detail)
@@ -235,6 +318,10 @@ def create_app() -> FastAPI:
             raise ApiError(404, "FILE_NOT_FOUND", "file_path does not exist")
         if full_path.suffix.lower() not in {".pdf", ".docx"}:
             raise ApiError(422, "UNSUPPORTED_FORMAT", "Expected .pdf or .docx document")
+
+        # Ingestion parser expects a concrete path; normalize to resolved absolute path.
+        doc_meta.file_path = str(full_path)
+        await _ingest_if_needed(doc_meta)
 
         state = await _run_or_load_state(full_path)
         if state.get("error"):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, cast
+from typing import Awaitable, Callable, cast
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
@@ -221,6 +221,70 @@ def ingest_document(
 
         try:
             vector = embed_fn(text)
+        except Exception:
+            result.skipped_embed_error += 1
+            continue
+
+        if len(vector) != QHSE_VECTOR_SIZE:
+            raise IngestionError(
+                f"Embedding vector size {len(vector)} is invalid, expected {QHSE_VECTOR_SIZE}."
+            )
+
+        points.append(
+            PointStruct(
+                id=stable_uuid(meta.doc_id, section.id),
+                vector=vector,
+                payload=build_payload(section=section, meta=meta, result=parse_result),
+            )
+        )
+
+    if points:
+        qdrant_client.upsert(collection_name=collection, points=points)
+        result.ingested = len(points)
+    else:
+        result.reason = "no_sections_ingested"
+
+    return result
+
+
+async def ingest_document_async(
+    meta: DocumentMeta,
+    qdrant_client: QdrantClient,
+    embed_fn: Callable[[str], Awaitable[list[float]]],
+    *,
+    collection: str = QHSE_COLLECTION_NAME,
+    min_confidence: float = DEFAULT_MIN_CONFIDENCE,
+) -> IngestResult:
+    ensure_qhse_collection(qdrant_client, collection=collection, vector_size=QHSE_VECTOR_SIZE)
+
+    parse_result, sections = _parse_sections(meta.file_path)
+    quality_tier, quality_min_confidence, _ = assess_quality(sections)
+    result = _base_result(
+        meta=meta,
+        collection=collection,
+        total_sections=len(sections),
+        quality_tier=quality_tier,
+        min_confidence=float(quality_min_confidence),
+    )
+
+    if quality_tier == "C":
+        result.skipped_quality_gate = len(sections)
+        result.reason = "low_quality_document"
+        return result
+
+    points: list[PointStruct] = []
+    for section in sections:
+        text = (section.raw_text or "").strip()
+        if not text:
+            result.skipped_empty_text += 1
+            continue
+
+        if float(section.extraction_confidence) < min_confidence:
+            result.skipped_low_confidence += 1
+            continue
+
+        try:
+            vector = await embed_fn(text)
         except Exception:
             result.skipped_embed_error += 1
             continue

@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,9 +17,25 @@ api_app_mod = importlib.import_module("agent_compliance.api.app")
 
 
 @pytest.fixture(autouse=True)
-def clear_cache() -> None:
+def clear_cache(monkeypatch: pytest.MonkeyPatch) -> None:
     api_app_mod._STATE_CACHE.clear()
     api_app_mod._PIPELINE_RUNNER = None
+    api_app_mod._QDRANT_CLIENT = None
+    api_app_mod._EMBEDDER_SERVICE = None
+
+    monkeypatch.setattr(api_app_mod, "_get_qdrant_client", lambda: MagicMock())
+    monkeypatch.setattr(api_app_mod, "_get_embedder_service", lambda: MagicMock())
+    monkeypatch.setattr(api_app_mod, "has_ingested_document", lambda *args, **kwargs: True)
+
+    async def _noop_ingest(*args, **kwargs):
+        return SimpleNamespace(
+            ingested=1,
+            reason=None,
+            quality_tier="A",
+            min_confidence=1.0,
+        )
+
+    monkeypatch.setattr(api_app_mod, "ingest_document_async", _noop_ingest)
 
 
 @pytest.fixture()
@@ -75,6 +93,161 @@ def test_analyze_success(client: TestClient, monkeypatch: pytest.MonkeyPatch, fi
         (Path(__file__).parent / "fixtures" / fixture_name).read_text(encoding="utf-8")
     )
     assert payload == expected
+
+
+def test_analyze_cache_miss_runs_ingestion_once_and_keeps_contract(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    qdrant = MagicMock()
+    has_calls: list[tuple[str, str]] = []
+
+    def fake_has_ingested(_client, *, doc_id: str, company_id: str, collection: str = "qhse_sections"):
+        assert _client is qdrant
+        _ = collection
+        has_calls.append((doc_id, company_id))
+        return False
+
+    ingest_mock = AsyncMock(
+        return_value=SimpleNamespace(
+            ingested=2,
+            reason=None,
+            quality_tier="A",
+            min_confidence=1.0,
+        )
+    )
+
+    embedder = MagicMock()
+    embedder.embed_text = AsyncMock(return_value=[0.1] * 1024)
+
+    async def fake_run(_: str, thread_id: str | None = None) -> dict:
+        _ = thread_id
+        return {
+            "document_path": "ignored",
+            "parse_result": ParseResult(source_path="x", text="ok", pages=2),
+            "sections": _success_sections(),
+            "error": None,
+            "status": "sections_filtered",
+        }
+
+    monkeypatch.setattr(api_app_mod, "_PIPELINE_RUNNER", fake_run)
+    monkeypatch.setattr(api_app_mod, "_get_qdrant_client", lambda: qdrant)
+    monkeypatch.setattr(api_app_mod, "_get_embedder_service", lambda: embedder)
+    monkeypatch.setattr(api_app_mod, "has_ingested_document", fake_has_ingested)
+    monkeypatch.setattr(api_app_mod, "ingest_document_async", ingest_mock)
+
+    response = client.post("/analyze", json=MOCK_REQUEST)
+
+    assert response.status_code == 200
+    assert has_calls == [("00000000-0000-0000-0000-000000000004", "00000000-0000-0000-0000-000000000001")]
+    ingest_mock.assert_awaited_once()
+
+    payload = response.json()
+    expected = json.loads(
+        (Path(__file__).parent / "fixtures" / "golden_success_response.json").read_text(encoding="utf-8")
+    )
+    assert payload == expected
+
+
+def test_analyze_cache_hit_skips_ingestion(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ingest_mock = AsyncMock()
+
+    async def fake_run(_: str, thread_id: str | None = None) -> dict:
+        _ = thread_id
+        return {
+            "document_path": "ignored",
+            "parse_result": ParseResult(source_path="x", text="ok", pages=2),
+            "sections": _success_sections(),
+            "error": None,
+            "status": "sections_filtered",
+        }
+
+    monkeypatch.setattr(api_app_mod, "_PIPELINE_RUNNER", fake_run)
+    monkeypatch.setattr(api_app_mod, "has_ingested_document", lambda *args, **kwargs: True)
+    monkeypatch.setattr(api_app_mod, "ingest_document_async", ingest_mock)
+
+    response = client.post("/analyze", json=MOCK_REQUEST)
+
+    assert response.status_code == 200
+    ingest_mock.assert_not_awaited()
+
+
+def test_analyze_ingestion_exception_returns_500(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_run(_: str, thread_id: str | None = None) -> dict:
+        _ = thread_id
+        return {
+            "document_path": "ignored",
+            "parse_result": ParseResult(source_path="x", text="ok", pages=2),
+            "sections": _success_sections(),
+            "error": None,
+            "status": "sections_filtered",
+        }
+
+    async def failing_ingest(*args, **kwargs):
+        _ = args, kwargs
+        raise RuntimeError("qdrant down")
+
+    monkeypatch.setattr(api_app_mod, "_PIPELINE_RUNNER", fake_run)
+    monkeypatch.setattr(api_app_mod, "has_ingested_document", lambda *args, **kwargs: False)
+    monkeypatch.setattr(api_app_mod, "ingest_document_async", failing_ingest)
+
+    response = client.post("/analyze", json=MOCK_REQUEST)
+
+    assert response.status_code == 500
+    payload = response.json()
+    assert payload["code"] == "INGESTION_ERROR"
+
+
+def test_analyze_ingestion_low_quality_maps_to_422(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def low_quality_ingest(*args, **kwargs):
+        _ = args, kwargs
+        return SimpleNamespace(
+            ingested=0,
+            reason="low_quality_document",
+            quality_tier="C",
+            min_confidence=0.5,
+        )
+
+    monkeypatch.setattr(api_app_mod, "has_ingested_document", lambda *args, **kwargs: False)
+    monkeypatch.setattr(api_app_mod, "ingest_document_async", low_quality_ingest)
+
+    response = client.post("/analyze", json=MOCK_REQUEST)
+
+    assert response.status_code == 422
+    payload = response.json()
+    assert payload["code"] == "LOW_QUALITY_DOCUMENT"
+
+
+def test_analyze_ingestion_zero_non_low_quality_returns_500(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def zero_ingest(*args, **kwargs):
+        _ = args, kwargs
+        return SimpleNamespace(
+            ingested=0,
+            reason="no_sections_ingested",
+            quality_tier="A",
+            min_confidence=1.0,
+        )
+
+    monkeypatch.setattr(api_app_mod, "has_ingested_document", lambda *args, **kwargs: False)
+    monkeypatch.setattr(api_app_mod, "ingest_document_async", zero_ingest)
+
+    response = client.post("/analyze", json=MOCK_REQUEST)
+
+    assert response.status_code == 500
+    payload = response.json()
+    assert payload["code"] == "INGESTION_ERROR"
 
 
 def test_invalid_uuid_returns_structured_error(client: TestClient) -> None:
