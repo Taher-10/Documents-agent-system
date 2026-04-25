@@ -19,6 +19,26 @@ Validation completed:
 - `pytest -q agent_compliance/tests/test_sqlite_clause_access_layer.py` -> 6 passed
 - `pytest -q agent_compliance/tests` -> 53 passed
 
+### M2.3 — Graph Data Models (Completed)
+
+Implemented data model foundations in:
+- `agent_compliance/graph/models.py`
+
+Added models:
+- `MatchedClause` dataclass
+- `SectionMatch` dataclass
+- `MappingOutput` (Pydantic)
+- `MatchedClauseOutput` (Pydantic)
+- `SectionMatchOutput` (Pydantic, includes `NOT_APPLICABLE`)
+- `to_section_match(...)` converter with hallucination-drop guard for unknown clause IDs
+
+Added tests:
+- `agent_compliance/tests/test_graph_models.py`
+
+Validation completed:
+- `pytest -q agent_compliance/tests/test_graph_models.py` -> 5 passed
+- `pytest -q agent_compliance/tests` -> 67 passed
+
 ## Delivered in M2.2
 
 1. Norm normalization
@@ -58,7 +78,7 @@ Not included yet:
 
 ## Next Phase Plan (Recommended)
 
-### M2.3 — Graph Integration (Read Path Wiring)
+### M2.4 — Graph Integration (Read Path Wiring)
 
 Goal:
 - Wire the new retrieval layer into compliance flow after section analysis.
@@ -81,7 +101,7 @@ Tasks:
 - fallback retrieval path
 - empty-result resilience
 
-### M2.4 — API/Report Integration
+### M2.5 — API/Report Integration
 
 Goal:
 - Consume retrieved clause text in report generation and audit evidence outputs.
@@ -94,7 +114,7 @@ Tasks:
 - clause-backed evidence strings
 - behavior when no clause found
 
-### M2.5 — Operational Hardening
+### M2.6 — Operational Hardening
 
 Goal:
 - Production-safe behavior and observability.
