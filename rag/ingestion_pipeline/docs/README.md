@@ -52,7 +52,7 @@ count = embed_and_store(result, collection="norms")
 
 # Optional SQLite clause registry
 #   SQLITE_REGISTRY_ENABLED=true
-#   SQLITE_REGISTRY_PATH=output/iso_clauses.db
+#   SQLITE_REGISTRY_PATH=agent_compliance/data/iso_clauses.db
 #   SQLITE_REGISTRY_IF_EXISTS=skip   # skip | upsert | error
 #   Note: writer always canonicalizes to a single file name: iso_clauses.db
 ```

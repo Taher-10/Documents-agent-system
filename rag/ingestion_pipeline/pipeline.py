@@ -52,6 +52,7 @@ import asyncio
 import os
 import warnings
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List
 
 from rag.ingestion_pipeline.pdf_parser.document import ParsedDocument
@@ -110,6 +111,17 @@ def _env_flag(var_name: str, default: bool = False) -> bool:
     if raw is None:
         return default
     return raw.strip().lower() in {"1", "true", "yes", "on", "y"}
+
+
+def _default_sqlite_registry_path() -> str:
+    """
+    Canonical default SQLite registry location for all services.
+
+    Points to:
+      <repo_root>/agent_compliance/data/iso_clauses.db
+    """
+    repo_root = Path(__file__).resolve().parents[2]
+    return str(repo_root / "agent_compliance" / "data" / "iso_clauses.db")
 
 
 # ==============================================================================
@@ -200,7 +212,7 @@ def segment(
                               If None, reads SQLITE_REGISTRY_ENABLED (default false).
     sqlite_db_path          : Optional SQLite DB path override.
                               If None, reads SQLITE_REGISTRY_PATH, falling back to
-                              {output_dir}/iso_clauses.db.
+                              agent_compliance/data/iso_clauses.db.
     sqlite_if_exists        : Behavior when norm already exists in SQLite.
                               One of: "skip" (default), "upsert", "error".
                               If None, reads SQLITE_REGISTRY_IF_EXISTS.
@@ -225,7 +237,7 @@ def segment(
     if sqlite_db_path is None:
         sqlite_db_path = os.getenv(
             "SQLITE_REGISTRY_PATH",
-            os.path.join(output_dir, "iso_clauses.db"),
+            _default_sqlite_registry_path(),
         )
     sqlite_db_path = os.path.join(os.path.dirname(os.path.abspath(sqlite_db_path)), "iso_clauses.db")
     if sqlite_if_exists is None:

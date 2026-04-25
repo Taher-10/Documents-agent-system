@@ -1,0 +1,919 @@
+{
+  "standard_id": "ISO 14001:2015",
+  "generated_at": "2026-04-25T16:54:45.654272",
+  "chunk_count": 86,
+  "entries": [
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "0",
+      "keywords": []
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "1",
+      "keywords": [
+        "norme internationale",
+        "présente norme",
+        "internationale",
+        "norme",
+        "présente"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "2",
+      "keywords": [
+        "aucune référence",
+        "existe aucune",
+        "normatives existe",
+        "référence normative",
+        "références normatives"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3",
+      "keywords": [
+        "termes définitions",
+        "définitions",
+        "termes",
+        "besoins présent",
+        "document termes"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.1",
+      "keywords": [
+        "organisme leadership",
+        "relatifs organisme",
+        "leadership",
+        "termes relatifs",
+        "relatifs"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.1.1",
+      "keywords": [
+        "management peut",
+        "plusieurs",
+        "éléments",
+        "ensemble",
+        "fonctions"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.1.2",
+      "keywords": [
+        "composante système",
+        "conformité traiter",
+        "environnemental composante",
+        "environnementaux satisfaire",
+        "gérer aspects"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.1.3",
+      "keywords": [
+        "environnementale",
+        "environnementale intentions",
+        "environnementale telles",
+        "formulées direction",
+        "intentions orientation"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.1.4",
+      "keywords": [
+        "ayant",
+        "administrations partenariats",
+        "article concept",
+        "autorité relations",
+        "autre statut"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.1.5",
+      "keywords": [
+        "direction",
+        "partie organisme",
+        "partie",
+        "organisme",
+        "adresse ceux"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.1.6",
+      "keywords": [
+        "influencée",
+        "décision activité",
+        "estimer influencée",
+        "estimer",
+        "décision"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2",
+      "keywords": [
+        "relatifs planification",
+        "termes relatifs",
+        "relatifs",
+        "termes",
+        "planification"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.1",
+      "keywords": [
+        "milieu",
+        "article milieu",
+        "milieu peut",
+        "peut",
+        "air eau"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.2",
+      "keywords": [
+        "aspect environnemental",
+        "aspect",
+        "plusieurs",
+        "plusieurs impacts",
+        "environnemental peut"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.3",
+      "keywords": [
+        "caractéristique environnement",
+        "condition environnementale",
+        "déterminé moment",
+        "environnement tel",
+        "environnementale état"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.4",
+      "keywords": [
+        "bénéfique résultant",
+        "environnement négative",
+        "environnemental modification",
+        "modification environnement",
+        "négative bénéfique"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.5",
+      "keywords": [
+        "objectif",
+        "article objectif",
+        "objectif peut",
+        "opérationnel",
+        "résultat"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.6",
+      "keywords": [
+        "objectif",
+        "environnemental objectif",
+        "fixé organisme",
+        "objectif fixé",
+        "organisme cohérence"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.7",
+      "keywords": [
+        "matériaux",
+        "prévention pollution",
+        "pollution",
+        "prévention",
+        "réduire"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.8",
+      "keywords": [
+        "implicite",
+        "exigence",
+        "besoin attente",
+        "généralement implicite",
+        "généralement"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.9",
+      "keywords": [
+        "exigences",
+        "article obligations",
+        "auxquelles organisme",
+        "exigences légales",
+        "auxquelles"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.10",
+      "keywords": [
+        "guide iso",
+        "guide",
+        "risque",
+        "iso",
+        "conséquences"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.2.11",
+      "keywords": [
+        "effets",
+        "potentiels",
+        "opportunités",
+        "bénéfiques potentiels",
+        "effets négatifs"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.3",
+      "keywords": [
+        "relatifs support",
+        "support réalisation",
+        "activités opérationnelles",
+        "réalisation activités",
+        "termes relatifs"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.3.1",
+      "keywords": [
+        "aptitude mettre",
+        "compétence aptitude",
+        "connaissances savoir",
+        "faire pour",
+        "mettre pratique"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.3.2",
+      "keywords": [
+        "article informations",
+        "documentées peuvent",
+        "également appelées",
+        "appelées",
+        "peuvent"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.3.3",
+      "keywords": [
+        "vie",
+        "acquisition matières",
+        "matières premières",
+        "matières",
+        "phases"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.3.4",
+      "keywords": [
+        "partie",
+        "organisme externe",
+        "fonction",
+        "externe",
+        "accord selon"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.3.5",
+      "keywords": [
+        "éléments",
+        "activités corrélées",
+        "article processus",
+        "corrélées interaction",
+        "documenté non"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4",
+      "keywords": [
+        "relatifs évaluation",
+        "évaluation amélioration",
+        "amélioration performances",
+        "termes relatifs",
+        "relatifs"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.1",
+      "keywords": [
+        "audit",
+        "preuves audit",
+        "critères audit",
+        "critères",
+        "article audit"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.2",
+      "keywords": [
+        "conformité satisfaction",
+        "satisfaction exigence",
+        "satisfaction",
+        "exigence",
+        "conformité"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.3",
+      "keywords": [
+        "non",
+        "non conformité",
+        "exigences",
+        "article non",
+        "conformité non"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.4",
+      "keywords": [
+        "cause non",
+        "cause",
+        "action",
+        "non conformité",
+        "non"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.5",
+      "keywords": [
+        "amélioration",
+        "activité",
+        "performances",
+        "environnementale",
+        "activité déroule"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.6",
+      "keywords": [
+        "activités planifiées",
+        "efficacité niveau",
+        "obtention résultats",
+        "planifiées obtention",
+        "obtention"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.7",
+      "keywords": [
+        "indicateur représentation",
+        "management conditions",
+        "mesurable état",
+        "opérations management",
+        "représentation mesurable"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.8",
+      "keywords": [
+        "état",
+        "activité note",
+        "détermination état",
+        "déterminer état",
+        "nécessaire vérifier"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.9",
+      "keywords": [
+        "déterminer valeur",
+        "mesure processus",
+        "processus visant",
+        "visant déterminer",
+        "valeur"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.10",
+      "keywords": [
+        "article performances",
+        "performances peuvent",
+        "performances",
+        "peuvent",
+        "activités processus"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "3.4.11",
+      "keywords": [
+        "performance",
+        "environnementale",
+        "environnementaux",
+        "autres critères",
+        "critères moyen"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "4",
+      "keywords": [
+        "contexte organisme",
+        "contexte",
+        "organisme"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "4.1",
+      "keywords": [
+        "enjeux",
+        "organisme",
+        "affecter organisme",
+        "affectées organisme",
+        "attendus système"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "4.2",
+      "keywords": [
+        "besoins attentes",
+        "attentes",
+        "besoins",
+        "parties intéressées",
+        "intéressées"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "4.3",
+      "keywords": [
+        "domaine application",
+        "application",
+        "domaine",
+        "application être",
+        "fait référence"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "4.4",
+      "keywords": [
+        "management environnemental",
+        "système management",
+        "environnemental",
+        "management",
+        "jour"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "5",
+      "keywords": [
+        "leadership"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "5.1",
+      "keywords": [
+        "système",
+        "management environnemental",
+        "système management",
+        "environnemental",
+        "management"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "5.2",
+      "keywords": [
+        "inclut engagement",
+        "inclut",
+        "engagement",
+        "protection",
+        "environnementale"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "5.3",
+      "keywords": [
+        "direction",
+        "organisme direction",
+        "responsabilités autorités",
+        "autorités",
+        "sein organisme"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "6",
+      "keywords": [
+        "planification"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "6.1",
+      "keywords": [
+        "actions mettre",
+        "face risques",
+        "mettre face",
+        "face",
+        "risques opportunités"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "6.1.1",
+      "keywords": [
+        "nécessaire prendre",
+        "environnemental organisme",
+        "environnemental",
+        "prendre",
+        "assurance"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "6.1.2",
+      "keywords": [
+        "environnementaux",
+        "aspects",
+        "aspects environnementaux",
+        "environnementaux significatifs",
+        "significatifs"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "6.1.3",
+      "keywords": [
+        "obligations conformité",
+        "obligations",
+        "conformité",
+        "organisme",
+        "jour"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "6.1.4",
+      "keywords": [
+        "actions",
+        "actions organisme",
+        "planification actions",
+        "planification",
+        "actions lors"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "6.2",
+      "keywords": [
+        "environnementaux planification",
+        "planification actions",
+        "pour atteindre",
+        "actions pour",
+        "objectifs environnementaux"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "6.2.1",
+      "keywords": [
+        "objectifs environnementaux",
+        "être",
+        "environnementaux",
+        "objectifs",
+        "prenant"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "6.2.2",
+      "keywords": [
+        "seront",
+        "objectifs environnementaux",
+        "objectifs",
+        "environnementaux",
+        "atteindre objectifs"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7",
+      "keywords": [
+        "support"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.1",
+      "keywords": [
+        "ressources",
+        "identifier fournir",
+        "nécessaires établissement",
+        "organisme identifier",
+        "ressources nécessaires"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.2",
+      "keywords": [
+        "compétences",
+        "formation",
+        "personnes",
+        "compétences nécessaires",
+        "personnes compétentes"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.3",
+      "keywords": [
+        "non respect",
+        "respect",
+        "environnemental compris",
+        "travail",
+        "non"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.4",
+      "keywords": [
+        "communication"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.4.1",
+      "keywords": [
+        "communiquer",
+        "communications",
+        "quels",
+        "communication",
+        "informations"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.4.2",
+      "keywords": [
+        "communication",
+        "interne",
+        "apportés système",
+        "appropriée assurer",
+        "changements apportés"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.4.3",
+      "keywords": [
+        "communication",
+        "externe",
+        "comme établi",
+        "communication externe",
+        "communiquer externe"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.5",
+      "keywords": [
+        "informations documentées",
+        "documentées",
+        "informations"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.5.1",
+      "keywords": [
+        "informations documentées",
+        "documentées",
+        "organisme",
+        "informations",
+        "management environnemental"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.5.2",
+      "keywords": [
+        "exemple",
+        "création mise",
+        "mise jour",
+        "création",
+        "mise"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "7.5.3",
+      "keywords": [
+        "informations documentées",
+        "documentées",
+        "informations",
+        "utilisation",
+        "autorisation"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "8",
+      "keywords": [
+        "activités opérationnelles",
+        "réalisation activités",
+        "opérationnelles",
+        "réalisation",
+        "activités"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "8.1",
+      "keywords": [
+        "maîtrise",
+        "moyens",
+        "processus",
+        "exigences environnementales",
+        "moyens maîtrise"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "8.2",
+      "keywords": [
+        "urgence",
+        "situations urgence",
+        "situations",
+        "réponse",
+        "actions"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "9",
+      "keywords": [
+        "évaluation performances",
+        "évaluation",
+        "performances"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "9.1",
+      "keywords": [
+        "analyse évaluation",
+        "mesure analyse",
+        "analyse",
+        "surveillance mesure",
+        "surveillance"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "9.1.1",
+      "keywords": [
+        "surveillance mesure",
+        "surveillance",
+        "mesure",
+        "performance environnementale",
+        "performance"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "9.1.2",
+      "keywords": [
+        "conformité",
+        "conformité organisme",
+        "évaluation",
+        "évaluation conformité",
+        "actions nécessaire"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "9.2",
+      "keywords": [
+        "audit interne",
+        "audit",
+        "interne"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "9.2.1",
+      "keywords": [
+        "exigences",
+        "concernant système",
+        "conforme propres",
+        "déterminer système",
+        "efficacement mis"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "9.2.2",
+      "keywords": [
+        "audit",
+        "audits",
+        "programme audit",
+        "programme",
+        "audit interne"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "9.3",
+      "keywords": [
+        "direction",
+        "revue",
+        "revue direction",
+        "opportunités amélioration",
+        "opportunités"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "10",
+      "keywords": [
+        "amélioration"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "10.1",
+      "keywords": [
+        "actions nécessaires",
+        "amélioration mettre",
+        "déterminer opportunités",
+        "escomptés système",
+        "opportunités amélioration"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "10.2",
+      "keywords": [
+        "non",
+        "non conformité",
+        "action",
+        "conformité",
+        "non conformités"
+      ]
+    },
+    {
+      "norm_id": "ISO 14001:2015",
+      "clause_number": "10.3",
+      "keywords": [
+        "améliorer",
+        "continu pertinence",
+        "continue organisme",
+        "organisme améliorer",
+        "adéquation efficacité"
+      ]
+    }
+  ]
+}

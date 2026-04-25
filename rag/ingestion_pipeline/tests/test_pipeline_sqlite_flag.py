@@ -68,7 +68,7 @@ def test_segment_uses_env_defaults_for_sqlite_when_enabled(monkeypatch, tmp_path
 
     pipeline.segment(doc=SimpleNamespace(), output_dir=str(tmp_path))
 
-    assert calls["db_path"] == str(tmp_path / "iso_clauses.db")
+    assert calls["db_path"] == pipeline._default_sqlite_registry_path()
     assert calls["if_exists"] == "skip"
 
 
