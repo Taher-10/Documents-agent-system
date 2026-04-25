@@ -35,13 +35,17 @@ import datetime
 import json as _json
 import os
 import re
+import sqlite3
 import warnings
-from typing import List
+from typing import Dict, List, Tuple
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from rag.ingestion_pipeline.chunker.models import NormChunk
 from rag.ingestion_pipeline.segmenter.models import ClauseNode
+
+_CANONICAL_SQLITE_DB_FILENAME = "iso_clauses.db"
+_LEGACY_ALIAS_SQLITE_DB_FILENAME = "iso_norms.db"
 
 
 # ==============================================================================
@@ -197,6 +201,7 @@ def _chunk_to_registry_dict(chunk: NormChunk) -> dict:
         "norm_full":           chunk.norm_full,
         "norm_version":        chunk.norm_version,
         "clause_number":       chunk.clause_number,
+        "clause_family":       chunk.clause_family,
         "clause_title":        chunk.clause_title,
         "parent_clause":       chunk.parent_clause,
         "page_number":         chunk.page_number,
@@ -215,6 +220,30 @@ def _chunk_to_registry_dict(chunk: NormChunk) -> dict:
         "related_clauses":     chunk.related_clauses,
         "embedding_model":     chunk.embedding_model,
     }
+
+
+def _sqlite_effective_clause_title(
+    clause_title: str,
+    clause_number: str,
+    merged_text: str,
+    max_len: int = 80,
+) -> str:
+    """
+    Produce a display title suitable for SQLite clause rows.
+
+    If the extracted title is blank or only the bare clause number (e.g. "4.4.1"),
+    fallback to the first max_len characters of clause text so downstream LLM
+    consumers get semantic signal.
+    """
+    title = (clause_title or "").strip()
+    number = (clause_number or "").strip()
+    if title and title != number:
+        return title
+
+    text = " ".join((merged_text or "").split()).strip()
+    if not text:
+        return number
+    return text[:max_len].strip()
 
 
 
@@ -457,3 +486,451 @@ def write_normid_clause_bm25_registry(result, output_dir: str = "output") -> str
         fh.write(filename + '\n')
     
     return filepath
+
+
+def _sqlite_norm_key(norm_id: str, norm_version: str, language: str) -> str:
+    return f"{norm_id}:{norm_version}:{language}"
+
+
+def _sqlite_extract_norm_identity(chunks: List[NormChunk]) -> Tuple[str, str, str]:
+    if not chunks:
+        return "", "", "EN"
+    first = chunks[0]
+    norm_id = (first.norm_id or "").strip()
+    norm_version = (first.norm_version or "").strip()
+    language = (first.language or "EN").strip().upper()
+    return norm_id, norm_version, language
+
+
+def _canonical_sqlite_db_path(db_path: str) -> str:
+    requested = os.path.abspath(db_path)
+    directory = os.path.dirname(requested)
+    return os.path.join(directory, _CANONICAL_SQLITE_DB_FILENAME)
+
+
+def _sqlite_create_persistent_schema(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS iso_norms (
+            norm_key      TEXT PRIMARY KEY,
+            norm_id       TEXT NOT NULL,
+            norm_version  TEXT NOT NULL DEFAULT '',
+            language      TEXT NOT NULL DEFAULT 'EN',
+            norm_full     TEXT NOT NULL,
+            created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(norm_id, norm_version, language)
+        );
+
+        CREATE TABLE IF NOT EXISTS iso_clauses (
+            norm_key          TEXT NOT NULL,
+            norm_id           TEXT NOT NULL,
+            norm_version      TEXT NOT NULL DEFAULT '',
+            language          TEXT NOT NULL DEFAULT 'EN',
+            clause_number     TEXT NOT NULL,
+            clause_title      TEXT NOT NULL,
+            parent_clause     TEXT NOT NULL,
+            top_level_family  TEXT NOT NULL DEFAULT '',
+            text              TEXT NOT NULL,
+            has_requirements  INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (norm_key, clause_number),
+            FOREIGN KEY (norm_key) REFERENCES iso_norms(norm_key) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_iso_norm_identity
+            ON iso_norms(norm_id, norm_version, language);
+        CREATE INDEX IF NOT EXISTS idx_clause_norm_key
+            ON iso_clauses(norm_key);
+        CREATE INDEX IF NOT EXISTS idx_clause_norm_id
+            ON iso_clauses(norm_id);
+        CREATE INDEX IF NOT EXISTS idx_clause_family
+            ON iso_clauses(norm_id, top_level_family);
+        """
+    )
+
+
+def _sqlite_migrate_legacy_if_needed(conn: sqlite3.Connection) -> None:
+    table = conn.execute(
+        """
+        SELECT name
+        FROM sqlite_master
+        WHERE type='table' AND name='iso_clauses'
+        """
+    ).fetchone()
+    if not table:
+        return
+
+    columns = [
+        row[1]
+        for row in conn.execute("PRAGMA table_info(iso_clauses)").fetchall()
+    ]
+    if "norm_key" in columns:
+        return
+
+    legacy_table = "iso_clauses_legacy"
+    conn.execute(f"DROP TABLE IF EXISTS {legacy_table}")
+    conn.execute("ALTER TABLE iso_clauses RENAME TO iso_clauses_legacy")
+
+    _sqlite_create_persistent_schema(conn)
+
+    legacy_cols = {
+        row[1] for row in conn.execute(f"PRAGMA table_info({legacy_table})").fetchall()
+    }
+    has_top_level_family = "top_level_family" in legacy_cols
+    has_language = "language" in legacy_cols
+
+    legacy_rows = conn.execute(
+        f"""
+        SELECT
+            norm_id,
+            clause_number,
+            clause_title,
+            parent_clause,
+            {"top_level_family," if has_top_level_family else "'' AS top_level_family,"}
+            {"language," if has_language else "'EN' AS language,"}
+            text,
+            has_requirements
+        FROM {legacy_table}
+        """
+    ).fetchall()
+
+    norm_rows: Dict[str, Tuple[str, str, str, str]] = {}
+    clause_rows: List[Tuple[str, str, str, str, str, str, str, str, str, int]] = []
+    for row in legacy_rows:
+        norm_id = (row[0] or "").strip()
+        clause_number = (row[1] or "").strip()
+        clause_title = row[2] or ""
+        parent_clause = row[3] or ""
+        top_level_family = (row[4] or "").strip()
+        language = (row[5] or "EN").strip().upper()
+        text = row[6] or ""
+        has_requirements = int(row[7] or 0)
+
+        norm_version = ""
+        norm_key = _sqlite_norm_key(norm_id, norm_version, language)
+        norm_rows[norm_key] = (norm_key, norm_id, norm_version, language, norm_id or "UNKNOWN")
+
+        if not top_level_family:
+            top_level_family = clause_number.split(".")[0] if clause_number else ""
+
+        clause_rows.append(
+            (
+                norm_key,
+                norm_id,
+                norm_version,
+                language,
+                clause_number,
+                clause_title,
+                parent_clause,
+                top_level_family,
+                text,
+                has_requirements,
+            )
+        )
+
+    if norm_rows:
+        conn.executemany(
+            """
+            INSERT OR IGNORE INTO iso_norms (
+                norm_key,
+                norm_id,
+                norm_version,
+                language,
+                norm_full
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            list(norm_rows.values()),
+        )
+    if clause_rows:
+        conn.executemany(
+            """
+            INSERT INTO iso_clauses (
+                norm_key,
+                norm_id,
+                norm_version,
+                language,
+                clause_number,
+                clause_title,
+                parent_clause,
+                top_level_family,
+                text,
+                has_requirements
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            clause_rows,
+        )
+
+    conn.execute(f"DROP TABLE {legacy_table}")
+
+
+def _merge_sqlite_db_files(source_path: str, target_path: str) -> None:
+    source_abs = os.path.abspath(source_path)
+    target_abs = os.path.abspath(target_path)
+    if source_abs == target_abs or not os.path.exists(source_abs):
+        return
+
+    target_dir = os.path.dirname(target_abs)
+    if target_dir:
+        os.makedirs(target_dir, exist_ok=True)
+
+    with sqlite3.connect(target_abs) as target_conn, sqlite3.connect(source_abs) as source_conn:
+        target_conn.execute("PRAGMA foreign_keys = ON")
+        source_conn.execute("PRAGMA foreign_keys = ON")
+
+        _sqlite_migrate_legacy_if_needed(source_conn)
+        _sqlite_create_persistent_schema(source_conn)
+        _sqlite_migrate_legacy_if_needed(target_conn)
+        _sqlite_create_persistent_schema(target_conn)
+
+        norm_rows = source_conn.execute(
+            """
+            SELECT norm_key, norm_id, norm_version, language, norm_full, created_at
+            FROM iso_norms
+            """
+        ).fetchall()
+        if norm_rows:
+            target_conn.executemany(
+                """
+                INSERT OR IGNORE INTO iso_norms (
+                    norm_key, norm_id, norm_version, language, norm_full, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                norm_rows,
+            )
+
+        clause_rows = source_conn.execute(
+            """
+            SELECT
+                norm_key,
+                norm_id,
+                norm_version,
+                language,
+                clause_number,
+                clause_title,
+                parent_clause,
+                top_level_family,
+                text,
+                has_requirements
+            FROM iso_clauses
+            """
+        ).fetchall()
+        if clause_rows:
+            target_conn.executemany(
+                """
+                INSERT INTO iso_clauses (
+                    norm_key,
+                    norm_id,
+                    norm_version,
+                    language,
+                    clause_number,
+                    clause_title,
+                    parent_clause,
+                    top_level_family,
+                    text,
+                    has_requirements
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(norm_key, clause_number) DO UPDATE SET
+                    clause_title = excluded.clause_title,
+                    parent_clause = excluded.parent_clause,
+                    top_level_family = excluded.top_level_family,
+                    text = excluded.text,
+                    has_requirements = excluded.has_requirements
+                """,
+                clause_rows,
+            )
+        target_conn.commit()
+
+    os.remove(source_abs)
+
+
+def write_sqlite_clause_registry(
+    result,
+    db_path: str = "output/iso_clauses.db",
+    if_exists: str = "skip",
+) -> int:
+    """
+    Persist clause data into a norm-aware SQLite schema.
+
+    Behavior for existing norm identity (norm_id, norm_version, language):
+      • "skip"   (default): add-only, no overwrite
+      • "upsert": replace rows for that norm by upserting clauses
+      • "error" : raise RuntimeError
+    """
+    if if_exists not in {"skip", "upsert", "error"}:
+        raise ValueError(f"Unsupported if_exists mode: {if_exists!r}")
+
+    requested_db_path = os.path.abspath(db_path)
+    db_path = _canonical_sqlite_db_path(requested_db_path)
+    if requested_db_path != db_path:
+        warnings.warn(
+            f"[Registry] Normalizing SQLite path to canonical file {db_path} "
+            f"(requested {requested_db_path})",
+            UserWarning,
+            stacklevel=2,
+        )
+        _merge_sqlite_db_files(requested_db_path, db_path)
+
+    alias_path = os.path.join(
+        os.path.dirname(db_path),
+        _LEGACY_ALIAS_SQLITE_DB_FILENAME,
+    )
+    _merge_sqlite_db_files(alias_path, db_path)
+
+    chunks = list(result.chunks)
+    if not chunks:
+        return 0
+
+    db_dir = os.path.dirname(db_path)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+
+    norm_id, norm_version, language = _sqlite_extract_norm_identity(chunks)
+    norm_key = _sqlite_norm_key(norm_id, norm_version, language)
+    norm_full = chunks[0].norm_full or norm_id
+
+    grouped: Dict[str, List[NormChunk]] = {}
+    for chunk in chunks:
+        grouped.setdefault(chunk.clause_number, []).append(chunk)
+
+    rows: List[Tuple[str, str, str, str, str, str, str, str, str, int]] = []
+    for clause_number, clause_chunks in grouped.items():
+        ordered = sorted(
+            clause_chunks,
+            key=lambda c: (c.chunk_index, c.page_number, c.chunk_id),
+        )
+        first = ordered[0]
+        top_level_family = first.clause_family or (
+            clause_number.split(".")[0] if clause_number else ""
+        )
+        merged_text = "\n\n".join(
+            part.text.strip() for part in ordered if part.text and part.text.strip()
+        )
+        effective_title = _sqlite_effective_clause_title(
+            clause_title=first.clause_title,
+            clause_number=clause_number,
+            merged_text=merged_text,
+        )
+        rows.append(
+            (
+                norm_key,
+                norm_id,
+                norm_version,
+                language,
+                clause_number,
+                effective_title,
+                first.parent_clause or "",
+                top_level_family,
+                merged_text,
+                1 if any(part.has_requirements for part in ordered) else 0,
+            )
+        )
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        _sqlite_migrate_legacy_if_needed(conn)
+        _sqlite_create_persistent_schema(conn)
+
+        existing = conn.execute(
+            """
+            SELECT 1
+            FROM iso_norms
+            WHERE norm_id = ? AND norm_version = ? AND language = ?
+            LIMIT 1
+            """,
+            (norm_id, norm_version, language),
+        ).fetchone()
+
+        if existing:
+            if if_exists == "skip":
+                return 0
+            if if_exists == "error":
+                raise RuntimeError(
+                    "Norm already exists in SQLite registry: "
+                    f"{norm_id}:{norm_version}:{language}"
+                )
+        else:
+            conn.execute(
+                """
+                INSERT INTO iso_norms (
+                    norm_key,
+                    norm_id,
+                    norm_version,
+                    language,
+                    norm_full
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                (norm_key, norm_id, norm_version, language, norm_full),
+            )
+
+        if if_exists == "upsert":
+            conn.execute(
+                "DELETE FROM iso_clauses WHERE norm_key = ?",
+                (norm_key,),
+            )
+
+        conn.executemany(
+            """
+            INSERT INTO iso_clauses (
+                norm_key,
+                norm_id,
+                norm_version,
+                language,
+                clause_number,
+                clause_title,
+                parent_clause,
+                top_level_family,
+                text,
+                has_requirements
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(norm_key, clause_number) DO UPDATE SET
+                clause_title = excluded.clause_title,
+                parent_clause = excluded.parent_clause,
+                top_level_family = excluded.top_level_family,
+                text = excluded.text,
+                has_requirements = excluded.has_requirements
+            """,
+            rows,
+        )
+        conn.commit()
+
+    return len(rows)
+
+
+def delete_norm_from_sqlite_registry(
+    db_path: str,
+    norm_id: str,
+    norm_version: str = "",
+    language: str = "EN",
+) -> int:
+    """
+    Delete one norm identity from SQLite registry.
+
+    Returns the number of deleted norm records (0 or 1).
+    Clause rows are deleted automatically by ON DELETE CASCADE.
+    """
+    requested_db_path = os.path.abspath(db_path)
+    db_path = _canonical_sqlite_db_path(requested_db_path)
+    if requested_db_path != db_path:
+        _merge_sqlite_db_files(requested_db_path, db_path)
+
+    alias_path = os.path.join(
+        os.path.dirname(db_path),
+        _LEGACY_ALIAS_SQLITE_DB_FILENAME,
+    )
+    _merge_sqlite_db_files(alias_path, db_path)
+
+    if not os.path.exists(db_path):
+        return 0
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("PRAGMA foreign_keys = ON")
+        _sqlite_migrate_legacy_if_needed(conn)
+        _sqlite_create_persistent_schema(conn)
+        cur = conn.execute(
+            """
+            DELETE FROM iso_norms
+            WHERE norm_id = ? AND norm_version = ? AND language = ?
+            """,
+            (norm_id, norm_version, language.upper()),
+        )
+        conn.commit()
+        return cur.rowcount

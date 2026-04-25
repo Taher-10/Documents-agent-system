@@ -49,6 +49,7 @@ No other module may import from pipeline.py.
 from __future__ import annotations
 
 import asyncio
+import os
 import warnings
 from dataclasses import dataclass
 from typing import List
@@ -57,7 +58,13 @@ from rag.ingestion_pipeline.pdf_parser.document import ParsedDocument
 
 from rag.ingestion_pipeline.chunker import NormChunk, assemble_norm_chunks
 from rag.ingestion_pipeline.enricher import Enricher
-from rag.ingestion_pipeline.registry import validate_chunks, write_registry,write_normid_clause_bm25_registry,write_normid_clause_keywords_registry
+from rag.ingestion_pipeline.registry import (
+    validate_chunks,
+    write_normid_clause_bm25_registry,
+    write_normid_clause_keywords_registry,
+    write_registry,
+    write_sqlite_clause_registry,
+)
 from rag.ingestion_pipeline.segmenter import (
     STANDARD_ID_MAP,
     ClauseNode,
@@ -91,6 +98,18 @@ class SegmenterResult:
     standard_id: str
     tree: ClauseNode
     chunks: List[NormChunk]
+
+
+def _env_flag(var_name: str, default: bool = False) -> bool:
+    """
+    Parse a boolean environment flag.
+
+    Truthy values: 1, true, yes, on, y (case-insensitive).
+    """
+    raw = os.getenv(var_name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on", "y"}
 
 
 # ==============================================================================
@@ -156,6 +175,9 @@ def segment(
     doc: ParsedDocument,
     output_dir: str = "output",
     language: str = "",
+    sqlite_registry_enabled: bool | None = None,
+    sqlite_db_path: str | None = None,
+    sqlite_if_exists: str | None = None,
 ) -> SegmenterResult:
     """
     Full pipeline entry point (Phases 1–6).
@@ -164,6 +186,7 @@ def segment(
       Phase 6a — Pydantic structural validation (warnings only, never raises).
       Phase 6b — Writes a timestamped registry JSON file and updates the
                  stable latest-pointer file.
+      Phase 6c — Optional SQLite clause registry write (flag-controlled).
 
     The registry path is printed to stdout for operator visibility.
 
@@ -173,6 +196,14 @@ def segment(
     output_dir : Directory to write registry files into (created if absent).
     language   : ISO 639-1 code of the document language ("EN" or "FR").
                  Forwarded to segment_document() and stamped on all chunks.
+    sqlite_registry_enabled : Optional override for SQLite registry writing.
+                              If None, reads SQLITE_REGISTRY_ENABLED (default false).
+    sqlite_db_path          : Optional SQLite DB path override.
+                              If None, reads SQLITE_REGISTRY_PATH, falling back to
+                              {output_dir}/iso_clauses.db.
+    sqlite_if_exists        : Behavior when norm already exists in SQLite.
+                              One of: "skip" (default), "upsert", "error".
+                              If None, reads SQLITE_REGISTRY_IF_EXISTS.
 
     Returns
     -------
@@ -188,6 +219,29 @@ def segment(
     print(f"[Registry] Written → {registry_path}")
     write_normid_clause_keywords_registry(result, output_dir=output_dir)
     write_normid_clause_bm25_registry(result, output_dir=output_dir)
+
+    if sqlite_registry_enabled is None:
+        sqlite_registry_enabled = _env_flag("SQLITE_REGISTRY_ENABLED", default=False)
+    if sqlite_db_path is None:
+        sqlite_db_path = os.getenv(
+            "SQLITE_REGISTRY_PATH",
+            os.path.join(output_dir, "iso_clauses.db"),
+        )
+    sqlite_db_path = os.path.join(os.path.dirname(os.path.abspath(sqlite_db_path)), "iso_clauses.db")
+    if sqlite_if_exists is None:
+        sqlite_if_exists = os.getenv("SQLITE_REGISTRY_IF_EXISTS", "skip")
+    if sqlite_registry_enabled:
+        clause_count = write_sqlite_clause_registry(
+            result,
+            db_path=sqlite_db_path,
+            if_exists=sqlite_if_exists,
+        )
+        verb = "inserted" if clause_count else "skipped"
+        print(
+            f"[Registry] SQLite {verb} {clause_count} clauses "
+            f"(if_exists={sqlite_if_exists}) → "
+            f"{os.path.abspath(sqlite_db_path)}"
+        )
 
     return result
 

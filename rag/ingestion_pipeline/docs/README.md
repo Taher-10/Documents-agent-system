@@ -29,8 +29,9 @@ This documentation covers the full ingestion pipeline developed as part of a Fin
 | 5 | `chunker/assembler.py` | `List[ClauseSpan]` + markdown | `List[NormChunk]` |
 | 6 | `enricher/enricher.py` | `List[NormChunk]` | `List[NormChunk]` (enriched) |
 | 7a | `registry/registry.py` | `SegmenterResult` | JSON registry file |
-| 7b | `embedder/embedder.py` + `embedder/bm25_encoder.py` | `List[NormChunk]` | `EmbeddingResult` |
-| 7c | `vector_store/qdrant_store.py` | `List[EmbeddedChunk]` | Qdrant collection |
+| 7b | `registry/registry.py` | `SegmenterResult` | SQLite clause registry (`iso_clauses`) |
+| 7c | `embedder/embedder.py` + `embedder/bm25_encoder.py` | `List[NormChunk]` | `EmbeddingResult` |
+| 7d | `vector_store/qdrant_store.py` | `List[EmbeddedChunk]` | Qdrant collection |
 
 ---
 
@@ -48,6 +49,12 @@ result = segment(doc, output_dir="output")   # returns SegmenterResult
 # Run embedding + Qdrant upsert (Phase 7, optional)
 from pipeline import embed_and_store
 count = embed_and_store(result, collection="norms")
+
+# Optional SQLite clause registry
+#   SQLITE_REGISTRY_ENABLED=true
+#   SQLITE_REGISTRY_PATH=output/iso_clauses.db
+#   SQLITE_REGISTRY_IF_EXISTS=skip   # skip | upsert | error
+#   Note: writer always canonicalizes to a single file name: iso_clauses.db
 ```
 
 ---

@@ -16,12 +16,21 @@ If you need them directly (e.g. for testing):
   from registry import validate_chunks, write_registry
 """
 
-from .registry import validate_chunks, write_registry,write_normid_clause_bm25_registry,write_normid_clause_keywords_registry
+from .registry import (
+    delete_norm_from_sqlite_registry,
+    validate_chunks,
+    write_normid_clause_bm25_registry,
+    write_normid_clause_keywords_registry,
+    write_registry,
+    write_sqlite_clause_registry,
+)
 
 __all__ = [
     "validate_chunks",
     "write_registry",
     "write_normid_clause_bm25_registry",
     "write_normid_clause_keywords_registry",
+    "write_sqlite_clause_registry",
+    "delete_norm_from_sqlite_registry",
 
 ]
