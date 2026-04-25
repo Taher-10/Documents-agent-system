@@ -39,6 +39,29 @@ Validation completed:
 - `pytest -q agent_compliance/tests/test_graph_models.py` -> 5 passed
 - `pytest -q agent_compliance/tests` -> 67 passed
 
+### M2.4 — ComplianceState + LangGraph Skeleton (Completed)
+
+Implemented parallel LangGraph skeleton (legacy `agent_compliance/graph` untouched):
+- `agent_compliance/graph_v2/state.py`
+- `agent_compliance/graph_v2/nodes/loader.py`
+- `agent_compliance/graph_v2/workflow.py`
+- `agent_compliance/graph_v2/__init__.py`
+
+Added live smoke utility:
+- `agent_compliance/graph_v2/smoke_live_graph_v2.py`
+
+Added tests:
+- `agent_compliance/tests/test_graph_v2_skeleton.py`
+
+Validation completed:
+- `pytest -q agent_compliance/tests/test_graph_v2_skeleton.py` -> 5 passed
+- `pytest -q agent_compliance/tests` -> 72 passed
+
+Live integration smoke evidence (Qdrant + SQLite, FR menu):
+- Inputs: `doc_id=00000000-0000-0000-0000-000000000102`, `company_id=00000000-0000-0000-0000-000000000001`, `applicable_norms=["ISO 9001"]`, `language="FR"`
+- Output: `sections_count=13`, `ISO9001_menu_count=66`
+- Assertions: `sections>0=True`, `ISO9001 in menu=True`, `ISO9001 menu > 10=True`
+
 ## Delivered in M2.2
 
 1. Norm normalization
@@ -68,27 +91,27 @@ Validation completed:
 
 ## Current Scope Boundary
 
-This phase is complete for SQLite access only.
+M2.2, M2.3, and M2.4 are complete (SQLite access + data models + graph skeleton loader).
 
 Not included yet:
-- Graph integration (`agent_compliance/graph/*`)
+- LLM clause mapping/matching nodes
 - API/report integration (`agent_compliance/api/app.py`)
-- Replacement of existing Qdrant retrieval paths
+- Replacement/cutover of legacy `agent_compliance/graph/*`
 - Multi-version norm selection logic (`norm_version` parameterization)
 
 ## Next Phase Plan (Recommended)
 
-### M2.4 — Graph Integration (Read Path Wiring)
+### M2.5 — Clause Mapping + Matching Nodes
 
 Goal:
-- Wire the new retrieval layer into compliance flow after section analysis.
+- Add post-loader intelligence (mapping + matching) on top of `graph_v2` skeleton.
 
 Tasks:
 1. Define retrieval input contract from section context:
 - preferred clause IDs when available
 - fallback by `section_type` when IDs absent
 
-2. Add retrieval orchestration node (or helper) in graph:
+2. Add retrieval orchestration/matching nodes in `graph_v2`:
 - call `load_clause_menu` for menu context
 - call `fetch_clauses_by_ids` for targeted retrieval
 - fallback to `fetch_clauses_by_section_type`
@@ -96,12 +119,12 @@ Tasks:
 3. Add deterministic ordering and per-section trace metadata:
 - include selected clause numbers and norms used
 
-4. Add tests for graph integration behavior:
+4. Add tests for graph-node behavior:
 - successful targeted retrieval
 - fallback retrieval path
 - empty-result resilience
 
-### M2.5 — API/Report Integration
+### M2.6 — API/Report Integration
 
 Goal:
 - Consume retrieved clause text in report generation and audit evidence outputs.
@@ -114,7 +137,7 @@ Tasks:
 - clause-backed evidence strings
 - behavior when no clause found
 
-### M2.6 — Operational Hardening
+### M2.7 — Operational Hardening
 
 Goal:
 - Production-safe behavior and observability.

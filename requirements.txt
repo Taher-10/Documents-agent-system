@@ -63,6 +63,8 @@ jsonlines==4.0.0
 jsonref==1.1.0
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
+langchain==1.0.0
+langgraph==1.1.6
 latex2mathml==3.79.0
 llama-index==0.14.19
 llama-index-cli==0.5.6
