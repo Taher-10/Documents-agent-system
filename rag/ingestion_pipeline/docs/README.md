@@ -14,6 +14,7 @@ This documentation covers the full ingestion pipeline developed as part of a Fin
 | 4 | [04_architecture_insights.md](04_architecture_insights.md) | Architecture patterns, dependency rules, concurrency model, error handling strategy, and design principles |
 | 5 | [05_adrs.md](05_adrs.md) | Architecture Decision Records (ADRs) documenting key technical decisions, their context, alternatives, and trade-offs |
 | 6 | [06_summary.md](06_summary.md) | Executive summary suitable for inclusion in a PFE report conclusion |
+| 7 | [07_sqlite_registry_db.md](07_sqlite_registry_db.md) | SQLite schema, persistence model, ingestion adapter behavior, conflict modes, migration, and delete operations |
 
 ---
 
