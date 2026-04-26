@@ -62,6 +62,33 @@ Live integration smoke evidence (Qdrant + SQLite, FR menu):
 - Output: `sections_count=13`, `ISO9001_menu_count=66`
 - Assertions: `sections>0=True`, `ISO9001 in menu=True`, `ISO9001 menu > 10=True`
 
+### M2.5 — Groq Two-Call ReAct Mapper (Completed)
+
+Implemented mapper stage on top of `graph_v2`:
+- `agent_compliance/graph_v2/llm.py`
+- `agent_compliance/graph_v2/nodes/react_mapper.py`
+- `agent_compliance/graph_v2/workflow.py` (loader -> react_mapper -> END)
+
+State + loader enrichment:
+- Updated `agent_compliance/graph_v2/state.py`:
+  - `SectionMatch` import now from `agent_compliance.graph_v2.models`
+  - Added `doc_type` and `doc_level` fields
+- Updated `agent_compliance/graph_v2/nodes/loader.py` to pass through `doc_type` / `doc_level`
+
+Dependency and config:
+- Pinned `langchain-groq==1.1.2` in `requirements.txt`
+- Runtime requirement: `GROQ_API_KEY` must be set for mapper execution
+
+Added tests:
+- `agent_compliance/tests/test_graph_v2_react_mapper.py`
+- `agent_compliance/tests/test_graph_v2_workflow_mapper.py`
+- Updated `agent_compliance/tests/test_graph_v2_skeleton.py` for mapper-stage workflow
+
+Validation completed:
+- `pytest -q agent_compliance/tests/test_graph_v2_react_mapper.py agent_compliance/tests/test_graph_v2_workflow_mapper.py` -> 10 passed
+- `pytest -q agent_compliance/tests/test_graph_v2_react_mapper.py agent_compliance/tests/test_graph_v2_workflow_mapper.py agent_compliance/tests/test_graph_v2_skeleton.py` -> 15 passed
+- `pytest -q agent_compliance/tests` -> 82 passed
+
 ## Delivered in M2.2
 
 1. Norm normalization
@@ -91,38 +118,14 @@ Live integration smoke evidence (Qdrant + SQLite, FR menu):
 
 ## Current Scope Boundary
 
-M2.2, M2.3, and M2.4 are complete (SQLite access + data models + graph skeleton loader).
+M2.2, M2.3, M2.4, and M2.5 are complete (SQLite access + data models + graph skeleton + ReAct mapper).
 
 Not included yet:
-- LLM clause mapping/matching nodes
 - API/report integration (`agent_compliance/api/app.py`)
 - Replacement/cutover of legacy `agent_compliance/graph/*`
 - Multi-version norm selection logic (`norm_version` parameterization)
 
 ## Next Phase Plan (Recommended)
-
-### M2.5 — Clause Mapping + Matching Nodes
-
-Goal:
-- Add post-loader intelligence (mapping + matching) on top of `graph_v2` skeleton.
-
-Tasks:
-1. Define retrieval input contract from section context:
-- preferred clause IDs when available
-- fallback by `section_type` when IDs absent
-
-2. Add retrieval orchestration/matching nodes in `graph_v2`:
-- call `load_clause_menu` for menu context
-- call `fetch_clauses_by_ids` for targeted retrieval
-- fallback to `fetch_clauses_by_section_type`
-
-3. Add deterministic ordering and per-section trace metadata:
-- include selected clause numbers and norms used
-
-4. Add tests for graph-node behavior:
-- successful targeted retrieval
-- fallback retrieval path
-- empty-result resilience
 
 ### M2.6 — API/Report Integration
 

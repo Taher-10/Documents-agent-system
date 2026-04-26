@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 from agent_compliance.graph_v2.nodes import loader as loader_mod
 from agent_compliance.graph_v2.nodes.loader import loader_node
+from agent_compliance.graph_v2 import workflow as workflow_mod
 from agent_compliance.graph_v2.workflow import build_graph
 from agent_compliance.pdf_parser.parsed_document import ParsedSection, SectionType
 
@@ -26,6 +27,8 @@ def _state(language: str = "EN") -> dict:
         "company_id": "company-123",
         "applicable_norms": ["ISO 9001"],
         "language": language,
+        "doc_type": None,
+        "doc_level": None,
         "clause_menu": {},
         "sections": [],
         "section_matches": [],
@@ -43,7 +46,7 @@ def test_loader_node_uses_guarded_reader_and_clause_store(monkeypatch) -> None:
 
     def fake_read_document_sections(qdrant_client, *, doc_id: str, company_id: str):
         calls["read"] = {"qdrant_client": qdrant_client, "doc_id": doc_id, "company_id": company_id}
-        return SimpleNamespace(sections=[_section("sec-1")])
+        return SimpleNamespace(sections=[_section("sec-1")], metadata={"doc_type": "procedure", "doc_level": 3})
 
     def fake_load_clause_menu(applicable_norms, *, language: str, db_path: str):
         calls["menu"] = {
@@ -61,6 +64,8 @@ def test_loader_node_uses_guarded_reader_and_clause_store(monkeypatch) -> None:
 
     assert "sections" in result
     assert "clause_menu" in result
+    assert result["doc_type"] == "procedure"
+    assert result["doc_level"] == 3
     assert len(result["sections"]) == 1
     assert result["clause_menu"] == {"ISO9001": [("4.1", "Context")]}
     assert calls["read"] == {"qdrant_client": qdrant, "doc_id": "doc-123", "company_id": "company-123"}
@@ -76,7 +81,7 @@ def test_loader_language_pass_through(monkeypatch) -> None:
 
     def fake_read_document_sections(qdrant_client, *, doc_id: str, company_id: str):
         _ = qdrant_client, doc_id, company_id
-        return SimpleNamespace(sections=[])
+        return SimpleNamespace(sections=[], metadata={"doc_type": None, "doc_level": None})
 
     def fake_load_clause_menu(applicable_norms, *, language: str, db_path: str):
         seen["language"] = language
@@ -93,7 +98,7 @@ def test_loader_language_pass_through(monkeypatch) -> None:
 def test_loader_empty_sections_and_menu(monkeypatch) -> None:
     def fake_read_document_sections(qdrant_client, *, doc_id: str, company_id: str):
         _ = qdrant_client, doc_id, company_id
-        return SimpleNamespace(sections=[])
+        return SimpleNamespace(sections=[], metadata={"doc_type": None, "doc_level": None})
 
     def fake_load_clause_menu(applicable_norms, *, language: str, db_path: str):
         _ = applicable_norms, language, db_path
@@ -103,20 +108,29 @@ def test_loader_empty_sections_and_menu(monkeypatch) -> None:
     monkeypatch.setattr(loader_mod, "load_clause_menu", fake_load_clause_menu)
 
     result = loader_node(_state(), qdrant=MagicMock(), db_path="agent_compliance/data/iso_clauses.db")
-    assert result == {"sections": [], "clause_menu": {}}
+    assert result == {"sections": [], "clause_menu": {}, "doc_type": None, "doc_level": None}
 
 
 def test_compiled_graph_invoke_smoke_with_mocked_data_paths(monkeypatch) -> None:
     def fake_read_document_sections(qdrant_client, *, doc_id: str, company_id: str):
         _ = qdrant_client, doc_id, company_id
-        return SimpleNamespace(sections=[_section("sec-1"), _section("sec-2")])
+        return SimpleNamespace(
+            sections=[_section("sec-1"), _section("sec-2")],
+            metadata={"doc_type": "procedure", "doc_level": 3},
+        )
 
     def fake_load_clause_menu(applicable_norms, *, language: str, db_path: str):
         _ = applicable_norms, language, db_path
         return {"ISO9001": [(f"8.4.{idx}", f"Clause {idx}") for idx in range(1, 13)]}
 
+    def fake_react_mapper_node(state: dict, *, db_path: str):
+        _ = db_path
+        sections = state.get("sections", [])
+        return {"section_matches": [f"match-{idx}" for idx, _ in enumerate(sections, start=1)]}
+
     monkeypatch.setattr(loader_mod, "read_document_sections", fake_read_document_sections)
     monkeypatch.setattr(loader_mod, "load_clause_menu", fake_load_clause_menu)
+    monkeypatch.setattr(workflow_mod, "react_mapper_node", fake_react_mapper_node)
 
     graph = build_graph(MagicMock(), "agent_compliance/data/iso_clauses.db")
     result = graph.invoke(_state())
@@ -124,3 +138,4 @@ def test_compiled_graph_invoke_smoke_with_mocked_data_paths(monkeypatch) -> None
     assert len(result["sections"]) > 0
     assert "ISO9001" in result["clause_menu"]
     assert len(result["clause_menu"]["ISO9001"]) > 10
+    assert len(result["section_matches"]) == len(result["sections"])

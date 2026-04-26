@@ -21,4 +21,6 @@ def loader_node(state: ComplianceState, qdrant: QdrantClient, db_path: str) -> d
     return {
         "sections": sections_result.sections,
         "clause_menu": menu,
+        "doc_type": sections_result.metadata["doc_type"],
+        "doc_level": sections_result.metadata["doc_level"],
     }

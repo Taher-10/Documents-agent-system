@@ -70,6 +70,8 @@ def main() -> int:
             "company_id": args.company_id,
             "applicable_norms": norms,
             "language": args.language,
+            "doc_type": None,
+            "doc_level": None,
             "clause_menu": {},
             "sections": [],
             "section_matches": [],
