@@ -13,6 +13,7 @@ def _state() -> dict:
         "company_id": "company-123",
         "applicable_norms": ["ISO 9001"],
         "language": "FR",
+        "doc_code": None,
         "doc_type": None,
         "doc_level": None,
         "clause_menu": {},
@@ -42,6 +43,7 @@ def test_workflow_calls_loader_then_mapper_and_preserves_count(monkeypatch) -> N
         return {
             "sections": [_section("sec-1"), _section("sec-2")],
             "clause_menu": {"ISO9001": [("9.2.1", "Internal audit")]},
+            "doc_code": "PRO-QHSE-001",
             "doc_type": "procedure",
             "doc_level": 3,
         }

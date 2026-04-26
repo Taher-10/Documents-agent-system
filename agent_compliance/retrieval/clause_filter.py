@@ -6,7 +6,7 @@ from __future__ import annotations
 SECTION_TYPE_CLAUSE_MAP: dict[str, list[str]] = {
     "METADATA": ["7.5.2"],
     "SCOPE": ["4.1", "4.2", "4.3", "5.2"],
-    "DEFINITIONS": ["3", "4.1"],
+    "DEFINITIONS": ["3"],
     "REFERENCES": ["2"],
     "PROCEDURE_TEXT": ["6.1", "6.2", "8.1", "8.4", "8.5"],
     "RECORD_FORM": ["7.5", "9.1", "9.1.1"],

@@ -11,6 +11,7 @@ class ComplianceState(TypedDict):
     company_id: str
     applicable_norms: list[str]
     language: str
+    doc_code: str | None
     doc_type: str | None
     doc_level: int | None
     clause_menu: dict[str, list[tuple[str, str]]]

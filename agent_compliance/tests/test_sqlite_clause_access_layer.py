@@ -185,6 +185,7 @@ def test_get_top_level_families_normalized_input() -> None:
     assert get_top_level_families("PROCEDURE_TEXT") == expected
     assert get_top_level_families("procedure_text") == expected
     assert get_top_level_families("SectionType.PROCEDURE_TEXT") == expected
+    assert get_top_level_families("DEFINITIONS") == ["3"]
     assert get_top_level_families("unknown_section") == []
 
 

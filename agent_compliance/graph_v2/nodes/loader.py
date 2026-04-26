@@ -18,9 +18,11 @@ def loader_node(state: ComplianceState, qdrant: QdrantClient, db_path: str) -> d
         language=state["language"],
         db_path=db_path,
     )
+    metadata = sections_result.metadata
     return {
         "sections": sections_result.sections,
         "clause_menu": menu,
-        "doc_type": sections_result.metadata["doc_type"],
-        "doc_level": sections_result.metadata["doc_level"],
+        "doc_code": metadata["doc_code"] if metadata["doc_code"] is not None else state.get("doc_code"),
+        "doc_type": metadata["doc_type"] if metadata["doc_type"] is not None else state.get("doc_type"),
+        "doc_level": metadata["doc_level"] if metadata["doc_level"] is not None else state.get("doc_level"),
     }

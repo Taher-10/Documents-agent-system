@@ -1,12 +1,26 @@
 from __future__ import annotations
 
 import logging
+import re
+import time
 
+import groq
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.exceptions import OutputParserException
+from pydantic import ValidationError
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential,
+)
+from tenacity.wait import wait_base
 
 from agent_compliance.graph_v2.llm import get_llm
 from agent_compliance.graph_v2.models import (
     MappingOutput,
+    MatchedClause,
     SectionMatch,
     SectionMatchOutput,
     to_section_match,
@@ -38,15 +52,108 @@ _NON_MAPPABLE_TITLE_PATTERNS = [
 ]
 _SHORT_TEXT_THRESHOLD = 120
 _ASSESSMENT_CLAUSE_CAP = 8
+_ALWAYS_NON_MAPPABLE_TYPES = {"METADATA", "REFERENCES"}
+_DEFINITIONS_CLAUSES = ["3"]
+_INVALID_EVIDENCE_GAP = "invalid_evidence"
+_SECTION_PACING_SECONDS = 0.5
+_EVIDENCE_TOKEN_OVERLAP_THRESHOLD = 0.70
 
 
-def _is_mappable(section) -> bool:
+def _normalize_text(text: str | None) -> str:
+    return " ".join((text or "").split())
+
+
+def _tokenize_words(text: str | None) -> list[str]:
+    return re.findall(r"\w+", (text or "").lower(), flags=re.UNICODE)
+
+
+def _retry_after_seconds(exc: BaseException) -> float | None:
+    if not isinstance(exc, groq.RateLimitError):
+        return None
+    response = getattr(exc, "response", None)
+    if response is None:
+        return None
+    raw = response.headers.get("Retry-After")
+    if raw is None:
+        return None
+    try:
+        seconds = float(raw.strip())
+    except (TypeError, ValueError):
+        return None
+    return seconds if seconds > 0 else None
+
+
+class _wait_exponential_with_retry_after(wait_base):
+    def __init__(self, *, multiplier: float, min_wait: float, max_wait: float) -> None:
+        self._exponential = wait_exponential(multiplier=multiplier, min=min_wait, max=max_wait)
+
+    def __call__(self, retry_state) -> float:
+        base_wait = self._exponential(retry_state)
+        outcome = getattr(retry_state, "outcome", None)
+        exc = outcome.exception() if outcome is not None and outcome.failed else None
+        retry_after = _retry_after_seconds(exc) if exc is not None else None
+        if retry_after is None:
+            return base_wait
+        return max(base_wait, retry_after)
+
+
+def _is_retryable_llm_error(exc: BaseException) -> bool:
+    if isinstance(exc, (OutputParserException, ValidationError)):
+        return False
+
+    if isinstance(
+        exc,
+        (
+            groq.RateLimitError,
+            groq.APITimeoutError,
+            groq.APIConnectionError,
+            groq.InternalServerError,
+        ),
+    ):
+        return True
+
+    return isinstance(exc, groq.APIStatusError) and exc.status_code >= 500
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=_wait_exponential_with_retry_after(multiplier=1, min_wait=2, max_wait=8),
+    retry=retry_if_exception(_is_retryable_llm_error),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+def _invoke_structured(llm, prompt: list, schema):
+    return llm.with_structured_output(schema).invoke(prompt)
+
+
+def _normalized_section_type(section) -> str:
+    section_type = getattr(section, "section_type", "")
+    if hasattr(section_type, "name"):
+        return str(section_type.name).upper()
+    normalized = str(section_type).strip().upper().replace("-", "_").replace(" ", "_")
+    if "." in normalized:
+        normalized = normalized.rsplit(".", 1)[-1]
+    return normalized
+
+
+def _section_type_value(section) -> str:
+    section_type = getattr(section, "section_type", "")
+    return section_type.value if hasattr(section_type, "value") else str(section_type)
+
+
+def _is_mappable(section) -> tuple[bool, str | None]:
+    section_type = _normalized_section_type(section)
+    if section_type in _ALWAYS_NON_MAPPABLE_TYPES:
+        return False, "non_mappable_type"
+    if section_type == "DEFINITIONS":
+        return False, "non_mappable_definitions"
+
     title = (section.title or "").lower()
     if any(pattern in title for pattern in _NON_MAPPABLE_TITLE_PATTERNS):
-        return False
+        return False, "non_mappable_title"
     if len((section.raw_text or "").strip()) < _SHORT_TEXT_THRESHOLD:
-        return False
-    return True
+        return False, "non_mappable_short"
+    return True, None
 
 
 def _render_clause_menu(menu: dict[str, list[tuple[str, str]]]) -> str:
@@ -58,7 +165,25 @@ def _render_clause_menu(menu: dict[str, list[tuple[str, str]]]) -> str:
     return "\n".join(lines)
 
 
-def _mapping_prompt(section, menu_text: str, doc_type: str | None, doc_level: int | None) -> list:
+def _document_metadata_line(
+    doc_code: str | None,
+    doc_type: str | None,
+    doc_level: int | None,
+) -> str:
+    return (
+        f"Document: {doc_code or 'unknown'} | "
+        f"Type: {doc_type or 'unknown'} | "
+        f"Level: {doc_level if doc_level is not None else 'unknown'}"
+    )
+
+
+def _mapping_prompt(
+    section,
+    menu_text: str,
+    doc_code: str | None,
+    doc_type: str | None,
+    doc_level: int | None,
+) -> list:
     return [
         SystemMessage(
             content=(
@@ -70,7 +195,7 @@ def _mapping_prompt(section, menu_text: str, doc_type: str | None, doc_level: in
         ),
         HumanMessage(
             content=(
-                f"Document type: {doc_type or 'unknown'}  Level: {doc_level if doc_level is not None else 'unknown'}\n"
+                f"{_document_metadata_line(doc_code, doc_type, doc_level)}\n"
                 f"Section type: {section.section_type.value} (hint — do not restrict to this type only)\n"
                 f"Section title: {section.title}\n"
                 f"Section text:\n{section.raw_text}\n\n"
@@ -80,7 +205,13 @@ def _mapping_prompt(section, menu_text: str, doc_type: str | None, doc_level: in
     ]
 
 
-def _assessment_prompt(section, clauses: list[ClauseRecord]) -> list:
+def _assessment_prompt(
+    section,
+    clauses: list[ClauseRecord],
+    doc_code: str | None,
+    doc_type: str | None,
+    doc_level: int | None,
+) -> list:
     clause_block = "\n---\n".join(
         f"[{clause.norm_id}] {clause.clause_number} — {clause.clause_title}\n{clause.text}"
         for clause in clauses
@@ -102,6 +233,7 @@ def _assessment_prompt(section, clauses: list[ClauseRecord]) -> list:
         ),
         HumanMessage(
             content=(
+                f"{_document_metadata_line(doc_code, doc_type, doc_level)}\n"
                 f"Section type: {section.section_type.value}\n"
                 f"Section title: {section.title}\n"
                 f"Section text:\n{section.raw_text}\n\n"
@@ -114,7 +246,7 @@ def _assessment_prompt(section, clauses: list[ClauseRecord]) -> list:
 def _missing_match(section, *, gap: str) -> SectionMatch:
     return SectionMatch(
         section_id=section.id,
-        section_type=section.section_type.value,
+        section_type=_section_type_value(section),
         title=section.title,
         matched_clauses=[],
         status="MISSING",
@@ -124,38 +256,118 @@ def _missing_match(section, *, gap: str) -> SectionMatch:
     )
 
 
+def _definitions_match(state: ComplianceState, section, db_path: str) -> SectionMatch:
+    fetched = fetch_clauses_by_ids(
+        _DEFINITIONS_CLAUSES,
+        state["applicable_norms"],
+        language=state["language"],
+        db_path=db_path,
+    )
+    if not fetched:
+        logger.warning("Clause 3 unavailable for DEFINITIONS section %s", section.id)
+        return _missing_match(section, gap="definitions_clause_missing")
+
+    clause = fetched[0]
+    return SectionMatch(
+        section_id=section.id,
+        section_type=_section_type_value(section),
+        title=section.title,
+        matched_clauses=[
+            MatchedClause(
+                norm_id=clause.norm_id,
+                clause_number=clause.clause_number,
+                clause_title=clause.clause_title,
+                evidence_text="Definitions section detected; terminology reference only.",
+                status="PARTIAL",
+                advice="Align terms with Clause 3 vocabulary and reference the controlled glossary where needed.",
+            )
+        ],
+        status="PARTIAL",
+        gaps=["non_mappable_definitions"],
+        confidence=0.2,
+        has_commitments=False,
+    )
+
+
+def _validate_evidence(output: SectionMatchOutput, raw_text: str) -> SectionMatchOutput:
+    raw_tokens = set(_tokenize_words(raw_text))
+    validated = []
+    mutated = False
+
+    for mc in output.matched_clauses:
+        evidence_tokens = _tokenize_words(mc.evidence_text)
+        if evidence_tokens:
+            matched_tokens = sum(1 for token in evidence_tokens if token in raw_tokens)
+            overlap_ratio = matched_tokens / len(evidence_tokens)
+            if overlap_ratio < _EVIDENCE_TOKEN_OVERLAP_THRESHOLD:
+                mutated = True
+                continue
+        elif mc.status in ("COVERED", "PARTIAL"):
+            mc = mc.model_copy(update={"status": "NON_CONFORMING"})
+            mutated = True
+        validated.append(mc)
+
+    status = output.status
+    if status in ("COVERED", "PARTIAL") and not any(
+        mc.status in ("COVERED", "PARTIAL") for mc in validated
+    ):
+        status = "NON_CONFORMING"
+        mutated = True
+
+    gaps = list(output.gaps)
+    if mutated and _INVALID_EVIDENCE_GAP not in gaps:
+        gaps.append(_INVALID_EVIDENCE_GAP)
+
+    return output.model_copy(
+        update={
+            "matched_clauses": validated,
+            "status": status,
+            "gaps": gaps,
+        }
+    )
+
+
 def react_mapper_node(state: ComplianceState, db_path: str) -> dict:
     section_matches: list[SectionMatch] = []
     llm = None
 
     for section in state["sections"]:
-        if not _is_mappable(section):
+        is_mappable, reason = _is_mappable(section)
+        if not is_mappable:
+            if reason == "non_mappable_definitions":
+                section_matches.append(_definitions_match(state, section, db_path))
+                continue
             section_matches.append(
                 SectionMatch(
                     section_id=section.id,
-                    section_type=section.section_type.value,
+                    section_type=_section_type_value(section),
                     title=section.title,
                     matched_clauses=[],
                     status="NOT_APPLICABLE",
-                    gaps=[],
+                    gaps=[reason] if reason else [],
                     confidence=1.0,
                     has_commitments=False,
                 )
             )
             continue
 
+        used_llm = False
         try:
+            used_llm = True
             if llm is None:
                 llm = get_llm()
 
             menu_text = _render_clause_menu(state["clause_menu"])
-            mapping: MappingOutput = llm.with_structured_output(MappingOutput).invoke(
+            mapping: MappingOutput = _invoke_structured(
+                llm,
                 _mapping_prompt(
                     section,
                     menu_text,
+                    state.get("doc_code"),
                     state.get("doc_type"),
                     state.get("doc_level"),
-                )
+                ),
+                MappingOutput,
             )
 
             fetched = fetch_clauses_by_ids(
@@ -180,9 +392,18 @@ def react_mapper_node(state: ComplianceState, db_path: str) -> dict:
                 continue
 
             fetched_for_assessment = fetched[:_ASSESSMENT_CLAUSE_CAP]
-            output: SectionMatchOutput = llm.with_structured_output(SectionMatchOutput).invoke(
-                _assessment_prompt(section, fetched_for_assessment)
+            output: SectionMatchOutput = _invoke_structured(
+                llm,
+                _assessment_prompt(
+                    section,
+                    fetched_for_assessment,
+                    state.get("doc_code"),
+                    state.get("doc_type"),
+                    state.get("doc_level"),
+                ),
+                SectionMatchOutput,
             )
+            output = _validate_evidence(output, section.raw_text)
 
             terms = MODAL_TERMS_FR if state["language"].upper() == "FR" else MODAL_TERMS_EN
             raw_text_lower = section.raw_text.lower()
@@ -191,8 +412,14 @@ def react_mapper_node(state: ComplianceState, db_path: str) -> dict:
             section_matches.append(
                 to_section_match(output, fetched_for_assessment, section, has_commitments)
             )
-        except Exception:
-            logger.exception("Parse/LLM error on section %s", section.id)
+        except (OutputParserException, ValidationError):
+            logger.exception("Structured output parse error on section %s", section.id)
             section_matches.append(_missing_match(section, gap="llm_parse_error"))
+        except Exception:
+            logger.exception("All retries exhausted for section %s", section.id)
+            section_matches.append(_missing_match(section, gap="llm_exhausted"))
+        finally:
+            if used_llm:
+                time.sleep(_SECTION_PACING_SECONDS)
 
     return {"section_matches": section_matches}

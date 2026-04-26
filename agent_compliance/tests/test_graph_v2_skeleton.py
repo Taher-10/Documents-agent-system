@@ -27,6 +27,7 @@ def _state(language: str = "EN") -> dict:
         "company_id": "company-123",
         "applicable_norms": ["ISO 9001"],
         "language": language,
+        "doc_code": None,
         "doc_type": None,
         "doc_level": None,
         "clause_menu": {},
@@ -46,7 +47,10 @@ def test_loader_node_uses_guarded_reader_and_clause_store(monkeypatch) -> None:
 
     def fake_read_document_sections(qdrant_client, *, doc_id: str, company_id: str):
         calls["read"] = {"qdrant_client": qdrant_client, "doc_id": doc_id, "company_id": company_id}
-        return SimpleNamespace(sections=[_section("sec-1")], metadata={"doc_type": "procedure", "doc_level": 3})
+        return SimpleNamespace(
+            sections=[_section("sec-1")],
+            metadata={"doc_code": "PRO-QHSE-001", "doc_type": "procedure", "doc_level": 3},
+        )
 
     def fake_load_clause_menu(applicable_norms, *, language: str, db_path: str):
         calls["menu"] = {
@@ -64,6 +68,7 @@ def test_loader_node_uses_guarded_reader_and_clause_store(monkeypatch) -> None:
 
     assert "sections" in result
     assert "clause_menu" in result
+    assert result["doc_code"] == "PRO-QHSE-001"
     assert result["doc_type"] == "procedure"
     assert result["doc_level"] == 3
     assert len(result["sections"]) == 1
@@ -81,7 +86,7 @@ def test_loader_language_pass_through(monkeypatch) -> None:
 
     def fake_read_document_sections(qdrant_client, *, doc_id: str, company_id: str):
         _ = qdrant_client, doc_id, company_id
-        return SimpleNamespace(sections=[], metadata={"doc_type": None, "doc_level": None})
+        return SimpleNamespace(sections=[], metadata={"doc_code": None, "doc_type": None, "doc_level": None})
 
     def fake_load_clause_menu(applicable_norms, *, language: str, db_path: str):
         seen["language"] = language
@@ -98,7 +103,7 @@ def test_loader_language_pass_through(monkeypatch) -> None:
 def test_loader_empty_sections_and_menu(monkeypatch) -> None:
     def fake_read_document_sections(qdrant_client, *, doc_id: str, company_id: str):
         _ = qdrant_client, doc_id, company_id
-        return SimpleNamespace(sections=[], metadata={"doc_type": None, "doc_level": None})
+        return SimpleNamespace(sections=[], metadata={"doc_code": None, "doc_type": None, "doc_level": None})
 
     def fake_load_clause_menu(applicable_norms, *, language: str, db_path: str):
         _ = applicable_norms, language, db_path
@@ -108,7 +113,36 @@ def test_loader_empty_sections_and_menu(monkeypatch) -> None:
     monkeypatch.setattr(loader_mod, "load_clause_menu", fake_load_clause_menu)
 
     result = loader_node(_state(), qdrant=MagicMock(), db_path="agent_compliance/data/iso_clauses.db")
-    assert result == {"sections": [], "clause_menu": {}, "doc_type": None, "doc_level": None}
+    assert result == {
+        "sections": [],
+        "clause_menu": {},
+        "doc_code": None,
+        "doc_type": None,
+        "doc_level": None,
+    }
+
+
+def test_loader_preserves_prefilled_state_metadata_when_qdrant_missing(monkeypatch) -> None:
+    def fake_read_document_sections(qdrant_client, *, doc_id: str, company_id: str):
+        _ = qdrant_client, doc_id, company_id
+        return SimpleNamespace(sections=[], metadata={"doc_code": None, "doc_type": None, "doc_level": None})
+
+    def fake_load_clause_menu(applicable_norms, *, language: str, db_path: str):
+        _ = applicable_norms, language, db_path
+        return {}
+
+    monkeypatch.setattr(loader_mod, "read_document_sections", fake_read_document_sections)
+    monkeypatch.setattr(loader_mod, "load_clause_menu", fake_load_clause_menu)
+
+    state = _state()
+    state["doc_code"] = "PRO-ENV-001"
+    state["doc_type"] = "procedure"
+    state["doc_level"] = 3
+    result = loader_node(state, qdrant=MagicMock(), db_path="agent_compliance/data/iso_clauses.db")
+
+    assert result["doc_code"] == "PRO-ENV-001"
+    assert result["doc_type"] == "procedure"
+    assert result["doc_level"] == 3
 
 
 def test_compiled_graph_invoke_smoke_with_mocked_data_paths(monkeypatch) -> None:
@@ -116,7 +150,7 @@ def test_compiled_graph_invoke_smoke_with_mocked_data_paths(monkeypatch) -> None
         _ = qdrant_client, doc_id, company_id
         return SimpleNamespace(
             sections=[_section("sec-1"), _section("sec-2")],
-            metadata={"doc_type": "procedure", "doc_level": 3},
+            metadata={"doc_code": "PRO-QHSE-001", "doc_type": "procedure", "doc_level": 3},
         )
 
     def fake_load_clause_menu(applicable_norms, *, language: str, db_path: str):
